@@ -14,6 +14,7 @@ ffmpeg
 ffmpeg-python
 yt-dlp
 git+https://github.com/ali-mmagneto/gerek02
+git+https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest.git
 python-dotenv
 pyrogram
 aiofiles
