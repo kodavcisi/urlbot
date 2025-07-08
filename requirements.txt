@@ -11,6 +11,7 @@ TgCrypto
 motor
 dnspython
 ffmpeg
+ffmpeg-python
 yt-dlp
 git+https://github.com/ali-mmagneto/gerek02
 python-dotenv
