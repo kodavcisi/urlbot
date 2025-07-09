@@ -1,5 +1,6 @@
+aria2
 requests
-aiohttp==3.9.2
+aiohttp
 hachoir
 heroku3
 wget
