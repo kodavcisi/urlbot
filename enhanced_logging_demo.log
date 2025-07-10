@@ -1,0 +1,17 @@
+2025-07-10 19:17:07,123 - enhanced_logging_demo.py:39 - __main__ - DEBUG - Starting ffmpeg watermark placement: input_file=demo.mp4, water_mark_file=logo.png
+2025-07-10 19:17:07,124 - enhanced_logging_demo.py:43 - __main__ - DEBUG - Starting ffmpeg command: ffmpeg -i demo.mp4 -i logo.png -filter_complex overlay output.mp4
+2025-07-10 19:17:07,124 - enhanced_logging_demo.py:49 - __main__ - DEBUG - ffmpeg stdout: frame=  120 fps= 30 q=23.0 size=    1024kB time=00:00:04.00 bitrate=2097.2kbits/s speed=   1x
+2025-07-10 19:17:07,124 - enhanced_logging_demo.py:50 - __main__ - DEBUG - ffmpeg stderr: Stream mapping:
+  Stream #0:0 -> #0:0 (h264 (native) -> h264 (libx264))
+2025-07-10 19:17:07,124 - enhanced_logging_demo.py:53 - __main__ - DEBUG - ffmpeg operation completed successfully: output.mp4
+2025-07-10 19:17:07,124 - enhanced_logging_demo.py:60 - __main__ - ERROR - Error in ffmpeg operation: ffmpeg failed: No such file or directory
+2025-07-10 19:17:07,124 - enhanced_logging_demo.py:61 - __main__ - ERROR - Stack trace: Traceback (most recent call last):
+  File "/tmp/enhanced_logging_demo.py", line 58, in demonstrate_enhanced_logging
+    raise Exception("ffmpeg failed: No such file or directory")
+Exception: ffmpeg failed: No such file or directory
+
+2025-07-10 19:17:07,124 - enhanced_logging_demo.py:64 - __main__ - DEBUG - Starting yt-dlp download process with command: ['yt-dlp', '-f', 'best', 'https://example.com/video']
+2025-07-10 19:17:07,124 - enhanced_logging_demo.py:65 - __main__ - DEBUG - yt-dlp process started with PID: 12345
+2025-07-10 19:17:07,124 - enhanced_logging_demo.py:66 - __main__ - DEBUG - yt-dlp stdout: [download] 100% of 50.2MiB in 00:30
+2025-07-10 19:17:07,124 - enhanced_logging_demo.py:67 - __main__ - DEBUG - yt-dlp process completed with return code: 0
+2025-07-10 19:17:07,124 - enhanced_logging_demo.py:68 - __main__ - DEBUG - yt-dlp download completed successfully
