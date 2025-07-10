@@ -227,6 +227,7 @@ async def yt_dlp_call_back(bot, update):
 
             command_to_exec = [
                 "yt-dlp",
+                "-v",
                 "-c",
                 "--max-filesize", str(TG_MAX_FILE_SIZE),
                 "--embed-subs",
@@ -238,6 +239,7 @@ async def yt_dlp_call_back(bot, update):
         except KeyError:
             command_to_exec = [
                 "yt-dlp",
+                "-v",
                 "-c",
                 "--max-filesize", str(TG_MAX_FILE_SIZE),
                 yt_dlp_url, "-o", download_directory
