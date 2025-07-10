@@ -29,8 +29,7 @@ from functions.utils import remove_urls, remove_emoji
 import logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     handlers=[logging.FileHandler('log.txt'), logging.StreamHandler()],
-                    level=logging.DEBUG,
-                    level=logging.INFO)
+                    level=logging.DEBUG)
 LOGGER = logging.getLogger(__name__)
 
  
