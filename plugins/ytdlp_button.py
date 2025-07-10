@@ -232,7 +232,7 @@ async def yt_dlp_call_back(bot, update):
                 "--embed-subs",
                 "-f", yt_dlp_format,
                 "--hls-prefer-ffmpeg",
-                "--ffmpeg-location", "/app/vendor/ffmpeg/ffmpeg",
+                "--ffmpeg-location", "/app/vendor/ffmpeg",
                 "-o", download_directory,
                 yt_dlp_url
             ]
