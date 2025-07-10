@@ -231,7 +231,7 @@ async def yt_dlp_call_back(bot, update):
                 "--max-filesize", str(TG_MAX_FILE_SIZE),
                 "--embed-subs",
                 "-f", yt_dlp_format,
-                "--hls-prefer-native", yt_dlp_url,
+                "--hls-prefer-ffmpeg", yt_dlp_url,
                 "--ffmpeg-location", "/app/vendor/ffmpeg/ffmpeg",
                 "-o", download_directory
             ]
@@ -251,6 +251,8 @@ async def yt_dlp_call_back(bot, update):
         command_to_exec.append("-x 16 -s 16 -k 1M")
         command_to_exec.append("--merge-output-format")
         command_to_exec.append("mp4")
+        command_to_exec.append("--recode-video")
+        command_to_exec.append("mp4")  
         command_to_exec.append("--ffmpeg-location")
         command_to_exec.append("/app/vendor/ffmpeg/ffmpeg")
 
