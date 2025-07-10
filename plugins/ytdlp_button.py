@@ -244,7 +244,7 @@ async def yt_dlp_call_back(bot, update):
                 "--max-filesize", str(TG_MAX_FILE_SIZE),
                 yt_dlp_url, "-o", download_directory
             ]
-        command_to_exec.append("--merge-output-format")
+        command_to_exec.append("--recode-video")
         command_to_exec.append("mp4")
 
     if await db.get_aria2(user_id) is True:
@@ -252,7 +252,7 @@ async def yt_dlp_call_back(bot, update):
         command_to_exec.append("aria2c")
         command_to_exec.append("--external-downloader-args")
         command_to_exec.append("-x 16 -s 16 -k 1M")
-        command_to_exec.append("--merge-output-format")
+        command_to_exec.append("--recode-video")
         command_to_exec.append("mp4")  
         command_to_exec.append("--ffmpeg-location")
         command_to_exec.append("/app/vendor/ffmpeg")
