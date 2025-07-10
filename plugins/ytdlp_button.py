@@ -253,7 +253,7 @@ async def yt_dlp_call_back(bot, update):
         command_to_exec.append("--remux-video")
         command_to_exec.append("mp4")  
         command_to_exec.append("--ffmpeg-location")
-        command_to_exec.append("/app/vendor/ffmpeg/ffmpeg")
+        command_to_exec.append("/app/vendor/ffmpeg")
 
     #
     command_to_exec.append("--no-warnings")
