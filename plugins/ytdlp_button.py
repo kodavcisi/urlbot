@@ -232,6 +232,7 @@ async def yt_dlp_call_back(bot, update):
                 "--embed-subs",
                 "-f", yt_dlp_format,
                 "--hls-prefer-ffmpeg", yt_dlp_url,
+                "--ffmpeg-location", "/app/vendor/ffmpeg/ffmpeg",
                 "-o", download_directory
             ]
         except KeyError:
