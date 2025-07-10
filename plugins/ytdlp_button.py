@@ -227,12 +227,11 @@ async def yt_dlp_call_back(bot, update):
 
             command_to_exec = [
                 "yt-dlp",
-                "-v",
                 "-c",
                 "--max-filesize", str(TG_MAX_FILE_SIZE),
                 "--embed-subs",
                 "-f", yt_dlp_format,
-                "--hls-prefer-ffmpeg", yt_dlp_url,
+                "--hls-prefer-native", yt_dlp_url,
                 "--ffmpeg-location", "/app/vendor/ffmpeg/ffmpeg",
                 "-o", download_directory
             ]
