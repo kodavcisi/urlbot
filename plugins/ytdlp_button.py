@@ -244,6 +244,8 @@ async def yt_dlp_call_back(bot, update):
                 "--max-filesize", str(TG_MAX_FILE_SIZE),
                 yt_dlp_url, "-o", download_directory
             ]
+        command_to_exec.append("--merge-output-format")
+        command_to_exec.append("mp4")
 
     if await db.get_aria2(user_id) is True:
         command_to_exec.append("--external-downloader")
