@@ -1,0 +1,10 @@
+root - INFO - --- CONFIGS STARTS HERE ---
+2025-07-10 19:16:04,794 - test_logging_simple.py:16 - __main__ - INFO - Testing enhanced ffmpeg logging functionality
+2025-07-10 19:16:04,795 - test_logging_simple.py:19 - __main__ - DEBUG - This is a DEBUG level message for ffmpeg operations
+2025-07-10 19:16:04,795 - test_logging_simple.py:25 - __main__ - ERROR - Error in ffmpeg operation: Simulated ffmpeg error for testing
+2025-07-10 19:16:04,798 - test_logging_simple.py:26 - __main__ - ERROR - Stack trace: Traceback (most recent call last):
+  File "/tmp/test_logging_simple.py", line 23, in test_enhanced_logging
+    raise Exception("Simulated ffmpeg error for testing")
+Exception: Simulated ffmpeg error for testing
+
+2025-07-10 19:16:04,798 - test_logging_simple.py:28 - __main__ - INFO - Enhanced logging test completed successfully

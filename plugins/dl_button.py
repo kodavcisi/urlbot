@@ -16,7 +16,7 @@ from config import DOWNLOAD_LOCATION, TG_MAX_FILE_SIZE, LOG_CHANNEL, PROCESS_MAX
 
 import logging
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logging.basicConfig(format='%(asctime)s - %(filename)s:%(lineno)d - %(name)s - %(levelname)s - %(message)s',
                     handlers=[logging.FileHandler('log.txt'), logging.StreamHandler()],
                     level=logging.INFO)
 LOGGER = logging.getLogger(__name__)
