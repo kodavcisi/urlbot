@@ -389,6 +389,27 @@ async def yt_dlp_call_back(bot, update):
             path = os.path.join(tmp_directory_for_each_user, single_file)
 
             file_size = os.stat(path).st_size
+            if path.endswith(('.mp4', '.mkv', '.webm')):
+                converted_path = path.rsplit('.', 1)[0] + '_aac128.mp4'
+                ffmpeg_cmd = [
+                    "ffmpeg", "-y", "-i", path,
+                    "-c:v", "copy",
+                    "-c:a", "aac",
+                    "-b:a", "128k",
+                    '-movflags', '+faststart',
+                    converted_path
+                ]
+                try:
+                    subprocess.run(ffmpeg_cmd, check=True)
+                    if os.path.exists(converted_path):
+                        # eski dosyayı sil
+                        try:
+                            os.remove(path)
+                        except Exception as e:
+                            LOGGER.error(f"Eski dosya silinemedi: {e}")
+                        path = converted_path
+                except Exception as ffmpeg_err:
+                    LOGGER.error(f"FFmpeg dönüştürme hatası: {ffmpeg_err}")
 
             try:
                 if tg_send_type == 'video' and 'webm' in path:
