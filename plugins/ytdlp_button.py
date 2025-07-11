@@ -237,7 +237,6 @@ async def yt_dlp_call_back(bot, update):
                 "--embed-subs",
                 "-f", yt_dlp_format,
                 "--hls-prefer-ffmpeg",
-                "--ffmpeg-location", "/app/vendor/ffmpeg",
                 "-o", download_directory,
                 yt_dlp_url
             ]
@@ -258,9 +257,7 @@ async def yt_dlp_call_back(bot, update):
         command_to_exec.append("--external-downloader-args")
         command_to_exec.append("-x 16 -s 16 -k 1M")
         command_to_exec.append("--recode-video")
-        command_to_exec.append("mp4")  
-        command_to_exec.append("--ffmpeg-location")
-        command_to_exec.append("/app/vendor/ffmpeg")
+        command_to_exec.append("mp4")
 
     #
     command_to_exec.append("--no-warnings")
@@ -396,7 +393,7 @@ async def yt_dlp_call_back(bot, update):
             base, ext = os.path.splitext(path)
             mp4_path = base + '_converted.mp4'
             ffmpeg_command = [
-            '/app/vendor/ffmpeg', '-y', '-i', path,
+            'ffmpeg', '-y', '-i', path,
             '-c:v', 'libx264', '-c:a', 'copy', mp4_path
                 ]
             subprocess.run(ffmpeg_command, check=True)
