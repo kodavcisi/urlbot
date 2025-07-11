@@ -397,7 +397,7 @@ async def yt_dlp_call_back(bot, update):
             mp4_path = base + '_converted.mp4'
             ffmpeg_command = [
             'ffmpeg', '-y', '-i', path,
-            '-c:v', 'copy', '-c:a', 'copy', mp4_path
+            '-c:v', 'libx264', '-c:a', 'copy', mp4_path
                 ]
             subprocess.run(ffmpeg_command, check=True)
             os.remove(path)
