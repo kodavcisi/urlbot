@@ -396,7 +396,7 @@ async def yt_dlp_call_back(bot, update):
             base, ext = os.path.splitext(path)
             mp4_path = base + '_converted.mp4'
             ffmpeg_command = [
-            'ffmpeg', '-y', '-i', path,
+            '/app/vendor/ffmpeg', '-y', '-i', path,
             '-c:v', 'libx264', '-c:a', 'copy', mp4_path
                 ]
             subprocess.run(ffmpeg_command, check=True)
