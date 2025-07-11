@@ -69,6 +69,49 @@ def convert_to_mp4_ffmpeg(input_path):
         LOGGER.error(f"Beklenmeyen hata: {ex}", exc_info=True)
         return None
 
+def convert_to_mp4_container(input_path):
+    """
+    Convert video to MP4 container without re-encoding (stream copy)
+    Uses: ffmpeg -i input -c copy output.mp4
+    """
+    # Generate output path with .mp4 extension and same base name
+    base_name = os.path.splitext(input_path)[0]
+    output_path = base_name + ".mp4"
+    
+    # Skip conversion if file is already mp4
+    if input_path.lower().endswith('.mp4'):
+        LOGGER.info(f"Dosya zaten MP4 formatında: {input_path}")
+        return input_path
+    
+    ffmpeg_command = [
+        "ffmpeg", "-y", "-i", input_path, "-c", "copy", output_path
+    ]
+
+    LOGGER.info(f"MP4 kapsayıcı dönüşümü başlatılıyor: {input_path} -> {output_path}")
+    try:
+        result = subprocess.run(
+            ffmpeg_command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True
+        )
+        LOGGER.info("MP4 kapsayıcı dönüşümü başarılı.")
+        LOGGER.debug(f"FFmpeg stdout: {result.stdout.decode(errors='ignore')}")
+        LOGGER.debug(f"FFmpeg stderr: {result.stderr.decode(errors='ignore')}")
+        
+        # Remove original file after successful conversion
+        os.remove(input_path)
+        LOGGER.info(f"Orijinal dosya silindi: {input_path}")
+        return output_path
+    except subprocess.CalledProcessError as e:
+        LOGGER.error(f"MP4 kapsayıcı dönüşümü hata! Komut: {' '.join(ffmpeg_command)}")
+        LOGGER.error(f"FFmpeg stdout: {e.stdout.decode(errors='ignore') if e.stdout else ''}")
+        LOGGER.error(f"FFmpeg stderr: {e.stderr.decode(errors='ignore') if e.stderr else ''}")
+        return input_path  # Return original path if conversion fails
+    except Exception as ex:
+        LOGGER.error(f"MP4 kapsayıcı dönüşümünde beklenmeyen hata: {ex}", exc_info=True)
+        return input_path  # Return original path if conversion fails
+
 # Kalan kodun...
 
  
@@ -434,6 +477,17 @@ async def yt_dlp_call_back(bot, update):
                     path = download_directory
             except:
                 pass
+
+            # Convert to MP4 container using stream copy (no re-encoding)
+            if tg_send_type == 'video':
+                try:
+                    converted_path = convert_to_mp4_container(path)
+                    if converted_path != path:
+                        path = converted_path
+                        file_size = os.stat(path).st_size  # Update file size after conversion
+                except Exception as e:
+                    LOGGER.error(f"MP4 dönüşümü sırasında hata: {e}")
+                    # Continue with original file if conversion fails
 
             if file_size > 2093796556:
                 is_w_f = False
