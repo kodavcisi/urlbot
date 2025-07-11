@@ -388,20 +388,20 @@ async def yt_dlp_call_back(bot, update):
                 pass
 
         for single_file in directory_contents:
-    print(single_file)
-    path = os.path.join(tmp_directory_for_each_user, single_file)
+            print(single_file)
+            path = os.path.join(tmp_directory_for_each_user, single_file)
 
-    file_size = os.stat(path).st_size
+            file_size = os.stat(path).st_size
 
-    # Her dosyayı mp4 container'a kopyala (codec'e dokunma)
-    mp4_path = os.path.splitext(path)[0] + '.mp4'
-    ffmpeg_command = [
-        'ffmpeg', '-y', '-i', path,
-        '-c:v', 'copy', '-c:a', 'copy', mp4_path
-    ]
-    subprocess.run(ffmpeg_command, check=True)
-    os.remove(path)
-    os.rename(mp4_path, path)
+         # Her dosyayı mp4 container'a kopyala (codec'e dokunma)
+            mp4_path = os.path.splitext(path)[0] + '.mp4'
+            ffmpeg_command = [
+                'ffmpeg', '-y', '-i', path,
+                '-c:v', 'copy', '-c:a', 'copy', mp4_path
+                ]
+            subprocess.run(ffmpeg_command, check=True)
+            os.remove(path)
+            os.rename(mp4_path, path)
 
             try:
                 if tg_send_type == 'video' and 'webm' in path:
