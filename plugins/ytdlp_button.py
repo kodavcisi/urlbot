@@ -1,4 +1,3 @@
-import uuid 
 import asyncio
 import json
 import re
@@ -388,38 +387,8 @@ async def yt_dlp_call_back(bot, update):
         for single_file in directory_contents:
             print(single_file)
             path = os.path.join(tmp_directory_for_each_user, single_file)
-
-            if path.endswith(('.mp4', '.mkv', '.webm')):
-                base_name = path.rsplit('.', 1)[0]
-                converted_path = f"{base_name}_{uuid.uuid4().hex}_aac128.mp4"
-                
-                ffmpeg_cmd = [
-                    "ffmpeg", "-y", "-i", path,
-                    "-c:v", "libx264",  # Güvenli video dönüşümü
-                    "-c:a", "aac", "-b:a", "128k",
-                    "-strict", "experimental",
-                    "-map", "0",
-                    converted_path
-                ]
-                
-                try:
-                    result = subprocess.run(
-                        ffmpeg_cmd,
-                        check=True,
-                        capture_output=True,
-                        text=True
-                    )
-                    if os.path.exists(converted_path):
-                        os.remove(path)  # Orijinali sil
-                        path = converted_path
-                    else:
-                        LOGGER.error("Dönüştürülen dosya oluşturulamadı!")
-                        
-                except subprocess.CalledProcessError as e:
-                    LOGGER.error(f"FFmpeg hatası: {e.stderr}")
-                except Exception as e:
-                    LOGGER.error(f"Beklenmeyen hata: {str(e)}")
-
+            file_size = os.stat(path).st_size
+            
             try:
                 if tg_send_type == 'video' and 'webm' in path:
                     download_directory = path.rsplit('.', 1)[0] + '.mkv'
