@@ -38,40 +38,6 @@ logging.basicConfig(
 )
 LOGGER = logging.getLogger(__name__)
 
-# Buradan sonra kodunda her yerde LOGGER.info(), LOGGER.error()... kullanabilirsin
-
-def convert_to_mp4_ffmpeg(input_path):
-    output_path = os.path.splitext(input_path)[0] + "_converted.mp4"
-    ffmpeg_command = [
-        "ffmpeg", "-y", "-i", input_path, "-c:v", "libx264", "-c:a", "aac", output_path
-    ]
-
-    LOGGER.info(f"FFmpeg dönüşümü başlatılıyor: {input_path} -> {output_path}")
-    try:
-        result = subprocess.run(
-            ffmpeg_command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=True
-        )
-        LOGGER.info("FFmpeg dönüşümü başarılı.")
-        LOGGER.debug(f"FFmpeg stdout: {result.stdout.decode(errors='ignore')}")
-        LOGGER.debug(f"FFmpeg stderr: {result.stderr.decode(errors='ignore')}")
-        os.remove(input_path)
-        LOGGER.info(f"Orijinal dosya silindi: {input_path}")
-        return output_path
-    except subprocess.CalledProcessError as e:
-        LOGGER.error(f"FFmpeg hata! Komut: {' '.join(ffmpeg_command)}")
-        LOGGER.error(f"FFmpeg stdout: {e.stdout.decode(errors='ignore') if e.stdout else ''}")
-        LOGGER.error(f"FFmpeg stderr: {e.stderr.decode(errors='ignore') if e.stderr else ''}")
-        return None
-    except Exception as ex:
-        LOGGER.error(f"Beklenmeyen hata: {ex}", exc_info=True)
-        return None
-
-# Kalan kodun...
-
- 
 progress_pattern = re.compile(
     r'(frame|fps|size|time|bitrate|speed|Duration)\s*\=\s*(\S+)'
 )
