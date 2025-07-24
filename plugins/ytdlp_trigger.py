@@ -384,30 +384,40 @@ async def echo(bot, update):
         # LOGGER.info(reply_markup)
     thumbnail = DEF_THUMB_NAIL_VID_S
     thumbnail_image = DEF_THUMB_NAIL_VID_S
-
-    if "thumbnail" in current_r_json:
-        if current_r_json["thumbnail"] is not None:
-            thumbnail = current_r_json["thumbnail"]
-            thumbnail_image = current_r_json["thumbnail"]
-    thumb_image_path = DownLoadFile(
-        thumbnail_image,
-        DOWNLOAD_LOCATION + "/" +
-        str(update.from_user.id) + random + ".webp",
-        CHUNK_SIZE,
-        None,  # bot,
-        Translation.DOWNLOAD_START,
-        message_id,
-        chat_id
-    )
-
-    if os.path.exists(thumb_image_path):
-        im = Image.open(thumb_image_path).convert("RGB")
-        im.save(thumb_image_path.replace(".webp", ".jpg"), "jpeg")
+    
+    if "thumbnail" in current_r_json and current_r_json["thumbnail"]:
+        thumbnail_image = current_r_json["thumbnail"]
+    
+    # Thumbnail indir, hata olursa atla
+    try:
+        thumb_image_path = DownLoadFile(
+            thumbnail_image,
+            DOWNLOAD_LOCATION + "/" + str(update.from_user.id) + random + ".webp",
+            CHUNK_SIZE,
+            None,
+            Translation.DOWNLOAD_START,
+            message_id,
+            chat_id
+        )
+    except Exception as e:
+        print(f"[UYARI] Thumbnail indirilemedi: {e}")
+        thumb_image_path = None
+    
+    # Thumbnail dönüştürme, hata olursa atla
+    if thumb_image_path and os.path.exists(thumb_image_path):
+        try:
+            im = Image.open(thumb_image_path).convert("RGB")
+            im.save(thumb_image_path.replace(".webp", ".jpg"), "jpeg")
+        except Exception as e:
+            print(f"[UYARI] Thumbnail dönüştürme başarısız: {e}")
     else:
         thumb_image_path = None
-
+    
+    # İndirme adımına devam et
     await send_message.edit_text(
         text=Translation.FORMAT_SELECTION,
         reply_markup=reply_markup,
         disable_web_page_preview=True
     )
+    
+          
