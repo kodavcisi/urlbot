@@ -196,7 +196,7 @@ async def echo(bot, update):
     if "rapidrame" in url:
         command_to_exec.append("--referer")
         command_to_exec.append("https://www.hdfilmcehennemi.fun/") 
-    if "dramaizle1.xyz" in yt_dlp_url:
+    if "dramaizle1.xyz" in url:
         command_to_exec.append("--add-header")
         command_to_exec.append("Accept: */*")
     if "master" in url:
