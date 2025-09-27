@@ -203,7 +203,7 @@ async def echo(bot, update):
         command_to_exec.append("--referer")
         command_to_exec.append("https://hdfilmcehennemi.mobi/")
         command_to_exec.append("--referer")
-        command_to_exec.append("https://closeload.filmmakinesi.de/")
+        command_to_exec.append("https://closeload.filmmakinesi.tv/")
     if "rectv2024live" in url:
         command_to_exec.append("--referer")
         command_to_exec.append("https://twitter.com/")
