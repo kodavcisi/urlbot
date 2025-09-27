@@ -307,7 +307,7 @@ async def yt_dlp_call_back(bot, update):
         command_to_exec.append("--referer")
         command_to_exec.append("https://hdfilmcehennemi.mobi/")
         command_to_exec.append("--referer")
-        command_to_exec.append("https://closeload.filmmakinesi.de/")
+        command_to_exec.append("https://closeload.filmmakinesi.tv/")
     if "rectv2024live" in yt_dlp_url:
         command_to_exec.append("--referer")
         command_to_exec.append("https://twitter.com/")
