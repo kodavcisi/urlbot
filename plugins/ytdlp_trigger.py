@@ -199,6 +199,9 @@ async def echo(bot, update):
     if "dramaizle1.xyz" in url:
         command_to_exec.append("--add-header")
         command_to_exec.append("Accept: */*")
+    if "hdmomplayer" in url:
+        command_to_exec.append("--add-header")
+        command_to_exec.append("Accept: */*")
     if "master" in url:
         command_to_exec.append("--referer")
         command_to_exec.append("https://hdfilmcehennemi.mobi/")
