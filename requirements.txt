@@ -1,4 +1,4 @@
-aria2
+#aria2
 requests
 aiohttp
 hachoir
