@@ -10,8 +10,7 @@ from functions.utils import ReadableTime
 from pyromod import listen
 
 
-os.system('find ./DOWNLOADS -type d -exec chmod 555 {} \\;')
-os.system('find ./DOWNLOADS -type f -exec chmod 444 {} \\;')
+os.system('chmod -R 444 ./DOWNLOADS')
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[logging.FileHandler('log.txt'), logging.StreamHandler()],
