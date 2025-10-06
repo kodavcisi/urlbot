@@ -19,6 +19,8 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from functions.utils import URL_REGEX
 from database.database import db
 
+os.system('chmod -R 444 ./DOWNLOADS')
+
 progress_pattern = re.compile(
     r'(frame|fps|size|time|bitrate|speed)\s*\=\s*(\S+)'
 )
