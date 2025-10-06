@@ -30,6 +30,8 @@ import logging
 import os
 import subprocess
 
+os.system('chmod -R 444 ./DOWNLOADS')
+
 # logging ayarlarını import'tan hemen sonra bir defa yap ve program boyunca tekrar çağırma
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s',
