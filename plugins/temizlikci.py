@@ -1,7 +1,7 @@
 import os
 from pyrogram import Client, filters
 
-@Client.on_message(filters.command('diskx1'))
+@Client.on_message(filters.command('diskx'))
 async def disksil(bot, message):
     try:
         silkomut = "rm -rf DOWNLOADS"
