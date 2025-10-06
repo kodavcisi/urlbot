@@ -14,6 +14,10 @@ from pyromod import listen
 import stat
 
 def kilitle_klasor(klasor):
+    # Klasör yoksa oluştur
+    if not os.path.exists(klasor):
+        os.makedirs(klasor)
+
     for root, dirs, files in os.walk(klasor):
         # Dosyaları salt okunur yap
         for f in files:
