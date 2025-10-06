@@ -10,27 +10,6 @@ from functions.utils import ReadableTime
 from pyromod import listen
 
 
-
-import stat
-
-def kilitle_klasor(klasor):
-    # Klasör yoksa oluştur
-    if not os.path.exists(klasor):
-        os.makedirs(klasor)
-
-    for root, dirs, files in os.walk(klasor):
-        # Dosyaları salt okunur yap
-        for f in files:
-            os.chmod(os.path.join(root, f), stat.S_IREAD)
-        # Klasörleri okunabilir ama değiştirilemez yap
-        for d in dirs:
-            os.chmod(os.path.join(root, d), stat.S_IREAD | stat.S_IRGRP | stat.S_IROTH)
-    # Ana klasör
-    os.chmod(klasor, stat.S_IREAD | stat.S_IRGRP | stat.S_IROTH)
-
-# Kullanım
-kilitle_klasor("./DOWNLOADS")
-
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[logging.FileHandler('log.txt'), logging.StreamHandler()],
     level=logging.INFO)
