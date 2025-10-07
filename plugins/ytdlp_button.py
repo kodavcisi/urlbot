@@ -236,7 +236,7 @@ async def yt_dlp_call_back(bot, update):
                 "--max-filesize", str(TG_MAX_FILE_SIZE),
                 "--embed-subs",
                 "-f", yt_dlp_format,
-                "--hls-prefer-ffmpeg",
+               # "--hls-prefer-ffmpeg",
                 "-o", download_directory,
                 yt_dlp_url
             ]
