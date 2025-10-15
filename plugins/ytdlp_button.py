@@ -29,7 +29,7 @@ from functions.utils import remove_urls, remove_emoji
 import logging
 import os
 import subprocess
-
+import re
 # logging ayarlarını import'tan hemen sonra bir defa yap ve program
 # boyunca tekrar çağırma
 logging.basicConfig(
