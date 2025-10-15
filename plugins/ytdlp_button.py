@@ -29,9 +29,8 @@ from functions.utils import remove_urls, remove_emoji
 import logging
 import os
 import subprocess
-import re
-# logging ayarlarını import'tan hemen sonra bir defa yap ve program
-# boyunca tekrar çağırma
+
+# logging ayarlarını import'tan hemen sonra bir defa yap ve program boyunca tekrar çağırma
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s',
     handlers=[logging.FileHandler('log.txt'), logging.StreamHandler()],
@@ -42,46 +41,29 @@ LOGGER = logging.getLogger(__name__)
 progress_pattern = re.compile(
     r'(frame|fps|size|time|bitrate|speed|Duration)\s*\=\s*(\S+)'
 )
-aria2_progress_pattern = re.compile(
-    r'\[#\w+\s+(?P<downloaded>[\d\.]+[KMG]?i?B)/(?P<total>[\d\.]+[KMG]?i?B)\((?P<percent>\d+)%\)\s+CN:\d+\s+DL:(?P<speed>[\d\.]+[KMG]?i?B)\s+ETA:(?P<eta>[\w:]+)\]'
-)
 
 async def read_stdera(start, process, bot, message_id, chat_id):
     async for line in readlines(process.stderr):
-        line = line.decode('utf-8')
-        # Önce yt-dlp ilerleme satırı dene
-        progress = parse_progress(line)
-        if not progress:
-            # aria2c ilerleme satırı dene
-            progress = parse_aria2_progress(line)
+            line = line.decode('utf-8')
+            progress = parse_progress(line)
             if progress:
-                text = (
-                    f"İndiriliyor (aria2c) 📥\n\n"
-                    f"İndirilen: {progress['downloaded']} / {progress['total']} ({progress['percent']}%)\n"
-                    f"İndirme Hızı: {progress['speed']}/s\n"
-                    f"Kalan Zaman: {progress['eta']}"
-                )
-            else:
-                continue
-        else:
-            text = (
-                'İndiriliyor 📥\n\n'
-                f"İndirilen Video Boyutu: {progress.get('size','')}\n"
-                f"İndirilen Video Süresi: {progress.get('time','')}\n"
-                f"İndirme Hızı: {progress.get('bitrate','')}\n"
-                f"İşlem Hızı: {progress.get('speed','')}"
-            )
-        now = time.time()
-        diff = start - now
-        if round(diff % 5) == 0:
-            try:
-                await bot.edit_message_text(
-                    text=text,
-                    chat_id=chat_id,
-                    message_id=message_id)
-            except Exception as e:
-                print(e)
+                #Progress bar logic
+                now = time.time()
+                diff = start-now
+                text = 'İndiriliyor 📥\n\n'
+                text += 'İndirilen Video Boyutu : {}\n'.format(progress['size'])
+                text += 'İndirilen Video Süresi: {}\n'.format(progress['time'])
+                text += 'İndirme Hızı : {}\n'.format(progress['bitrate'])
+                text += 'İşlem Hızı : {}\n'.format(progress['speed'])
 
+                if round(diff % 5)==0:
+                    try:
+                        await bot.edit_message_text(
+                            text=text,
+                            chat_id=chat_id,
+                            message_id=message_id)
+                    except Exception as e:
+                        print(e)
 
 def parse_progress(line):
     items = {
@@ -90,7 +72,6 @@ def parse_progress(line):
     if not items:
         return None
     return items
-
 
 async def readlines(stream):
     pattern = re.compile(br'[\r\n]+')
@@ -104,19 +85,18 @@ async def readlines(stream):
 
         data.extend(await stream.read(1024 * 1024))
 
-
 async def yt_dlp_call_back(bot, update):
     cb_data = update.data
     tg_send_type, yt_dlp_format, yt_dlp_ext, random = cb_data.split("|")
 
     dtime = str(time.time())
-
+    
     message = update.message
     current_user_id = message.reply_to_message.from_user.id
     user_id = update.from_user.id
     chat_id = message.chat.id
     message_id = message.id
-
+    
     if current_user_id != user_id:
         await bot.answer_callback_query(
             callback_query_id=update.id,
@@ -226,8 +206,7 @@ async def yt_dlp_call_back(bot, update):
     )
     if not os.path.isdir(tmp_directory_for_each_user):
         os.makedirs(tmp_directory_for_each_user)
-    download_directory = os.path.join(
-    tmp_directory_for_each_user, custom_file_name)
+    download_directory = os.path.join(tmp_directory_for_each_user, custom_file_name)
     command_to_exec = []
     if tg_send_type == "audio":
         command_to_exec = [
@@ -253,11 +232,14 @@ async def yt_dlp_call_back(bot, update):
 
             command_to_exec = [
                 "yt-dlp",
+		"-v",
+		"--newline", 
                 "-c",
                 "--max-filesize", str(TG_MAX_FILE_SIZE),
                 "--embed-subs",
                 "-f", yt_dlp_format,
-               # "--hls-prefer-ffmpeg",
+                "--hls-prefer-ffmpeg",
+		"-N", "16", 
                 "-o", download_directory,
                 yt_dlp_url
             ]
@@ -269,71 +251,21 @@ async def yt_dlp_call_back(bot, update):
                 "--max-filesize", str(TG_MAX_FILE_SIZE),
                 yt_dlp_url, "-o", download_directory
             ]
-        command_to_exec.append("--recode-video")
+        command_to_exec.append("--merge-output-format")
         command_to_exec.append("mp4")
 
     if await db.get_aria2(user_id) is True:
         command_to_exec.append("--external-downloader")
         command_to_exec.append("aria2c")
         command_to_exec.append("--external-downloader-args")
-        # Aria2c'ye her 1 saniyede bir summary ve notice seviyesinde log al!
-        command_to_exec.append("-c --console-log-level=notice --summary-interval=1")
+        command_to_exec.append("-x 16 -s 16 -k 1M")
         command_to_exec.append("--merge-output-format")
         command_to_exec.append("mp4")
-
     #
     command_to_exec.append("--no-warnings")
     # command_to_exec.append("--quiet")
     command_to_exec.append("--restrict-filenames")
     #
-    if HTTP_PROXY != "":
-        command_to_exec.append("--proxy")
-        command_to_exec.append(HTTP_PROXY)
-    # ... diğer referer/add-header eklemeleri aynı ...
-    LOGGER.info(command_to_exec)
-    start = datetime.now()
-    start1 = time.time() 
-
-    # Aria2c loglarını ekrana ve dosyaya basmak için yardımcı fonksiyon
-    async def log_process_output(process):
-        while True:
-            line = await process.stdout.readline()
-            if not line:
-                break
-            try:
-                decoded = line.decode('utf-8').strip()
-                if decoded:
-                    LOGGER.info(f"Downloader: {decoded}")
-            except Exception as e:
-                LOGGER.error(e)
-        while True:
-            line = await process.stderr.readline()
-            if not line:
-                break
-            try:
-                decoded = line.decode('utf-8').strip()
-                if decoded:
-                    LOGGER.info(f"Downloader: {decoded}")
-            except Exception as e:
-                LOGGER.error(e)
-
-    process = await asyncio.create_subprocess_exec(
-        *command_to_exec,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-
-    # aria2 kullanılıyorsa, log_process_output fonksiyonunu da başlat
-    if await db.get_aria2(user_id) is True:
-        await asyncio.wait([
-            log_process_output(process),
-            process.wait(),
-        ])
-    else:
-        await asyncio.wait([
-            read_stdera(start1, process, bot, message_id, chat_id),
-            process.wait(),
-        ])
     if HTTP_PROXY != "":
         command_to_exec.append("--proxy")
         command_to_exec.append(HTTP_PROXY)
@@ -373,7 +305,9 @@ async def yt_dlp_call_back(bot, update):
     if "dramaizle1.xyz" in yt_dlp_url:
         command_to_exec.append("--add-header")
         command_to_exec.append("Accept: */*")
-    if "hdmomplayer" in yt_dlp_url:
+    if ("hdmomplayer" in yt_dlp_url or
+    "cehennemstream" in yt_dlp_url or
+    "betaplayer" in yt_dlp_url):
         command_to_exec.append("--add-header")
         command_to_exec.append("Accept: */*")
     if "master" in yt_dlp_url:
