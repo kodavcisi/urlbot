@@ -392,9 +392,12 @@ async def yt_dlp_call_back(bot, update):
             directory_contents.sort()
         else:
             try:
-                shutil.rmtree(tmp_directory_for_each_user)  # delete folder for user
-                os.remove(thumb_image_path)
-            except:
+                if os.path.exists(tmp_directory_for_each_user):
+                    shutil.rmtree(tmp_directory_for_each_user)  # delete folder for user
+                if os.path.exists(thumb_image_path):
+                    os.remove(thumb_image_path)
+            except Exception as e:
+                LOGGER.debug(f"Error during directory cleanup: {e}")
                 pass
 
         for single_file in directory_contents:
@@ -405,9 +408,11 @@ async def yt_dlp_call_back(bot, update):
             try:
                 if tg_send_type == 'video' and 'webm' in path:
                     download_directory = path.rsplit('.', 1)[0] + '.mkv'
-                    os.rename(path, download_directory)
-                    path = download_directory
-            except:
+                    if os.path.exists(path):
+                        os.rename(path, download_directory)
+                        path = download_directory
+            except Exception as e:
+                LOGGER.debug(f"Error during webm to mkv rename: {e}")
                 pass
 
             if file_size > 2093796556:
@@ -435,6 +440,10 @@ async def yt_dlp_call_back(bot, update):
                     if tg_send_type == "audio":
                         duration = await AudioMetaData(path)
                         thumbnail = await DocumentThumb(bot, update)
+                        # Check if thumbnail exists before using it
+                        if thumbnail and not os.path.exists(thumbnail):
+                            LOGGER.info(f"Thumbnail path returned but file does not exist: {thumbnail}")
+                            thumbnail = None
                         await message.reply_to_message.reply_chat_action(ChatAction.UPLOAD_AUDIO)
                         copy = await userbot.send_audio(
                             chat_id=PRE_LOG,
@@ -464,6 +473,10 @@ async def yt_dlp_call_back(bot, update):
                     elif tg_send_type == "vm":
                         width, duration = await VMMetaData(path)
                         thumbnail = await VideoThumb(bot, update, duration, path, random)
+                        # Check if thumbnail exists before using it
+                        if thumbnail and not os.path.exists(thumbnail):
+                            LOGGER.info(f"Thumbnail path returned but file does not exist: {thumbnail}")
+                            thumbnail = None
                         await message.reply_to_message.reply_chat_action(ChatAction.UPLOAD_VIDEO_NOTE)
                         copy = await userbot.send_video_note(
                             chat_id=PRE_LOG,
@@ -516,6 +529,10 @@ async def yt_dlp_call_back(bot, update):
 
                     elif (await db.get_upload_as_doc(user_id)) is True:
                         thumbnail = await DocumentThumb(bot, update)
+                        # Check if thumbnail exists before using it
+                        if thumbnail and not os.path.exists(thumbnail):
+                            LOGGER.info(f"Thumbnail path returned but file does not exist: {thumbnail}")
+                            thumbnail = None
                         await message.reply_to_message.reply_chat_action(ChatAction.UPLOAD_DOCUMENT)
                         copy = await userbot.send_document(
                             chat_id=PRE_LOG, 
@@ -544,6 +561,10 @@ async def yt_dlp_call_back(bot, update):
                     else:
                         width, height, duration = await VideoMetaData(path)
                         thumb_image_path = await VideoThumb(bot, update, duration, path, random)
+                        # Check if thumbnail exists before using it
+                        if thumb_image_path and not os.path.exists(thumb_image_path):
+                            LOGGER.info(f"Thumbnail path returned but file does not exist: {thumb_image_path}")
+                            thumb_image_path = None
                         await message.reply_to_message.reply_chat_action(ChatAction.UPLOAD_VIDEO)
                         copy = await userbot.send_video(
                             chat_id=PRE_LOG,
@@ -583,9 +604,12 @@ async def yt_dlp_call_back(bot, update):
 
                 end_two = datetime.now()
                 try:
-                    os.remove(download_directory)
-                    os.remove(thumb_image_path)
-                except:
+                    if os.path.exists(download_directory):
+                        os.remove(download_directory)
+                    if os.path.exists(thumb_image_path):
+                        os.remove(thumb_image_path)
+                except Exception as e:
+                    LOGGER.debug(f"Error during cleanup in large file branch: {e}")
                     pass
                 time_taken_for_upload = (end_two - end_one).seconds
                 media_album_p = []
@@ -625,6 +649,10 @@ async def yt_dlp_call_back(bot, update):
                     if tg_send_type == "audio":
                         duration = await AudioMetaData(path)
                         thumbnail = await DocumentThumb(bot, update)
+                        # Check if thumbnail exists before using it
+                        if thumbnail and not os.path.exists(thumbnail):
+                            LOGGER.info(f"Thumbnail path returned but file does not exist: {thumbnail}")
+                            thumbnail = None
                         await message.reply_to_message.reply_chat_action(ChatAction.UPLOAD_AUDIO)
                         copy = await bot.send_audio(
                             chat_id=PRE_LOG,
@@ -644,6 +672,10 @@ async def yt_dlp_call_back(bot, update):
                     elif tg_send_type == "vm":
                         width, duration = await VMMetaData(path)
                         thumbnail = await VideoThumb(bot, update, duration, path, random)
+                        # Check if thumbnail exists before using it
+                        if thumbnail and not os.path.exists(thumbnail):
+                            LOGGER.info(f"Thumbnail path returned but file does not exist: {thumbnail}")
+                            thumbnail = None
                         await message.reply_to_message.reply_chat_action(ChatAction.UPLOAD_VIDEO_NOTE)
                         copy = await bot.send_video_note(
                             chat_id=chat_id,
@@ -676,6 +708,10 @@ async def yt_dlp_call_back(bot, update):
                         )
                     elif (await db.get_upload_as_doc(user_id)) is True:
                         thumbnail = await DocumentThumb(bot, update)
+                        # Check if thumbnail exists before using it
+                        if thumbnail and not os.path.exists(thumbnail):
+                            LOGGER.info(f"Thumbnail path returned but file does not exist: {thumbnail}")
+                            thumbnail = None
                         await message.reply_to_message.reply_chat_action(ChatAction.UPLOAD_DOCUMENT)
                         copy = await bot.send_document(
                             chat_id=chat_id, 
@@ -694,6 +730,10 @@ async def yt_dlp_call_back(bot, update):
                     else:
                         width, height, duration = await VideoMetaData(path)
                         thumb_image_path = await VideoThumb(bot, update, duration, path, random)
+                        # Check if thumbnail exists before using it
+                        if thumb_image_path and not os.path.exists(thumb_image_path):
+                            LOGGER.info(f"Thumbnail path returned but file does not exist: {thumb_image_path}")
+                            thumb_image_path = None
                         await message.reply_to_message.reply_chat_action(ChatAction.UPLOAD_VIDEO)
                         copy = await bot.send_video(
                             chat_id=chat_id,
@@ -722,9 +762,12 @@ async def yt_dlp_call_back(bot, update):
                     pass
                 end_two = datetime.now()
                 try:
-                    os.remove(download_directory)
-                    os.remove(thumb_image_path)
-                except:
+                    if os.path.exists(download_directory):
+                        os.remove(download_directory)
+                    if os.path.exists(thumb_image_path):
+                        os.remove(thumb_image_path)
+                except Exception as e:
+                    LOGGER.debug(f"Error during cleanup in normal file branch: {e}")
                     pass
                 time_taken_for_upload = (end_two - end_one).seconds
                 media_album_p = []
@@ -776,14 +819,20 @@ async def yt_dlp_call_back(bot, update):
                     )
             #
     try:
-        os.remove(thumb_image_path)
-    except:
+        if os.path.exists(thumb_image_path):
+            os.remove(thumb_image_path)
+    except Exception as e:
+        LOGGER.debug(f"Error removing thumb_image_path at end: {e}")
         pass
     try:
-        shutil.rmtree(tmp_directory_for_each_user)
-    except:
+        if os.path.exists(tmp_directory_for_each_user):
+            shutil.rmtree(tmp_directory_for_each_user)
+    except Exception as e:
+        LOGGER.debug(f"Error removing tmp_directory_for_each_user at end: {e}")
         pass
     try:
-        os.remove(path)
-    except:
+        if os.path.exists(path):
+            os.remove(path)
+    except Exception as e:
+        LOGGER.debug(f"Error removing path at end: {e}")
         pass
