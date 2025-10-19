@@ -1,8 +1,14 @@
 import logging
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    handlers=[logging.FileHandler('log.txt'), logging.StreamHandler()],
-                    level=logging.INFO)
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(funcName)s() - %(message)s',
+    handlers=[
+        logging.FileHandler('log.txt', encoding='utf-8'),
+        logging.StreamHandler()
+    ],
+    level=logging.DEBUG  # INFO yerine DEBUG
+)
+
 LOGGER = logging.getLogger(__name__)
 
 import os, time, asyncio, json
@@ -199,7 +205,9 @@ async def echo(bot, update):
     if "dramaizle1.xyz" in url:
         command_to_exec.append("--add-header")
         command_to_exec.append("Accept: */*")
-    if "hdmomplayer" in url:
+    if ("hdmomplayer" in url or
+    "cehennemstream" in url or
+    "betaplayer" in url):
         command_to_exec.append("--add-header")
         command_to_exec.append("Accept: */*")
     if "master" in url:
