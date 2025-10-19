@@ -723,7 +723,7 @@ async def yt_dlp_call_back(bot, update):
                 end_two = datetime.now()
                 try:
                     os.remove(download_directory)
-                    os.remove(thumb_image_path)
+                    #os.remove(thumb_image_path)
                 except:
                     pass
                 time_taken_for_upload = (end_two - end_one).seconds
@@ -775,10 +775,10 @@ async def yt_dlp_call_back(bot, update):
                         media=media_album_p
                     )
             #
-    try:
-        os.remove(thumb_image_path)
-    except:
-        pass
+#    try:
+#        os.remove(thumb_image_path)
+#    except:
+#        pass
     try:
         shutil.rmtree(tmp_directory_for_each_user)
     except:
