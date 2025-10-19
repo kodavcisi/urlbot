@@ -45,6 +45,9 @@ progress_pattern = re.compile(
 async def read_stdera(start, process, bot, message_id, chat_id):
     async for line in readlines(process.stderr):
             line = line.decode('utf-8')
+            line_stripped = line.strip()
+            if "%" in line_stripped or "Download complete" in line_stripped or "OK" in line_stripped:
+                        LOGGER.info(f"aria2c: {line_stripped}")
             progress = parse_progress(line)
             if progress:
                 #Progress bar logic
