@@ -88,6 +88,21 @@ async def readlines(stream):
 
         data.extend(await stream.read(1024 * 1024))
 
+# Güvenli silme yardımcı fonksiyonu:
+# Sadece kullanıcının oluşturduğu alt klasörü (tmp_directory_for_each_user) siler.
+# Kesinlikle kullanıcı ana klasörünü (DOWNLOAD_LOCATION/<user_id>) veya üst klasörleri silmez.
+def safe_rmtree_subdir(subdir, user_id):
+    try:
+        abs_subdir = os.path.abspath(subdir)
+        user_dir = os.path.abspath(os.path.join(DOWNLOAD_LOCATION, str(user_id)))
+        # subdir mutlaka user_dir altında olmalı ve user_dir ile aynı olmamalı
+        if abs_subdir.startswith(user_dir + os.sep) and abs_subdir != user_dir:
+            shutil.rmtree(abs_subdir)
+        else:
+            LOGGER.debug(f"Refused to rmtree unsafe path: {abs_subdir}")
+    except Exception as e:
+        LOGGER.debug(f"safe_rmtree_subdir error: {e}")
+
 async def yt_dlp_call_back(bot, update):
     cb_data = update.data
     tg_send_type, yt_dlp_format, yt_dlp_ext, random = cb_data.split("|")
@@ -391,11 +406,9 @@ async def yt_dlp_call_back(bot, update):
             directory_contents = os.listdir(tmp_directory_for_each_user)
             directory_contents.sort()
         else:
-            try:
-                shutil.rmtree(tmp_directory_for_each_user)  # delete folder for user
-                os.remove(thumb_image_path)
-            except:
-                pass
+            # Eğer tmp klasörü yoksa, güvenli silme yapmaya çalışmayacağız.
+            # Thumbnail'leri bilerek silmek istemediğiniz için os.remove(thumb_image_path) çağrıları kaldırıldı.
+            directory_contents = []
 
         for single_file in directory_contents:
             print(single_file)
@@ -583,8 +596,16 @@ async def yt_dlp_call_back(bot, update):
 
                 end_two = datetime.now()
                 try:
-                    os.remove(download_directory)
-                    os.remove(thumb_image_path)
+                    # sadece indirilen dosyayı sil
+                    try:
+                        os.remove(download_directory)
+                    except Exception:
+                        pass
+                    # thumbnail'leri bilerek silmiyoruz (isteğiniz üzerine)
+                    # try:
+                    #     os.remove(thumb_image_path)
+                    # except:
+                    #     pass
                 except:
                     pass
                 time_taken_for_upload = (end_two - end_one).seconds
@@ -599,6 +620,8 @@ async def yt_dlp_call_back(bot, update):
                     )
                 except MessageNotModified:
                     pass
+                # tmp klasörünü güvenli şekilde temizle (sadece alt klasörü)
+                safe_rmtree_subdir(tmp_directory_for_each_user, user_id)
                 return
             else:
                 is_w_f = False
@@ -722,8 +745,16 @@ async def yt_dlp_call_back(bot, update):
                     pass
                 end_two = datetime.now()
                 try:
-                    os.remove(download_directory)
-                    #os.remove(thumb_image_path)
+                    # sadece indirilen dosyayı sil
+                    try:
+                        os.remove(download_directory)
+                    except Exception:
+                        pass
+                    # thumbnail'leri bilerek silmiyoruz (isteğiniz üzerine)
+                    # try:
+                    #     os.remove(thumb_image_path)
+                    # except:
+                    #     pass
                 except:
                     pass
                 time_taken_for_upload = (end_two - end_one).seconds
@@ -738,12 +769,14 @@ async def yt_dlp_call_back(bot, update):
                     )
                 except MessageNotModified:
                     pass
+                # tmp klasörünü güvenli şekilde temizle (sadece alt klasörü)
+                safe_rmtree_subdir(tmp_directory_for_each_user, user_id)
                 return
 
                 end_two = datetime.now()
                 try:
                     os.remove(download_directory)
-                    os.remove(thumb_image_path)
+                    #os.remove(thumb_image_path)
                 except:
                     pass
                 time_taken_for_upload = (end_two - end_one).seconds
@@ -780,10 +813,22 @@ async def yt_dlp_call_back(bot, update):
 #    except:
 #        pass
     try:
-        shutil.rmtree(tmp_directory_for_each_user)
+        # Güvenli şekilde sadece tmp alt klasörünü sil (id klasörünü koru)
+        safe_rmtree_subdir(tmp_directory_for_each_user, user_id)
     except:
         pass
     try:
-        os.remove(path)
+        # path değişkeni döngüden geliyorsa, onu da sadece tmp alt klasörü içindeyse sil
+        if 'path' in locals():
+            try:
+                abs_path = os.path.abspath(path)
+                user_dir = os.path.abspath(os.path.join(DOWNLOAD_LOCATION, str(user_id)))
+                if abs_path.startswith(user_dir + os.sep):
+                    try:
+                        os.remove(path)
+                    except:
+                        pass
+            except:
+                pass
     except:
         pass
