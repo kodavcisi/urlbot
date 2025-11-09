@@ -1,4 +1,5 @@
 import asyncio
+import subprocess
 import json
 import re
 import os
@@ -238,6 +239,7 @@ async def yt_dlp_call_back(bot, update):
             yt_dlp_url,
             "-o", download_directory
         ]
+        subprocess.run(command_to_exec)
     else:
         try:
             for for_mat in response_json["formats"]:
