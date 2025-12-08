@@ -3,7 +3,7 @@ import re
 import time
 import asyncio
 import logging
-from typing import Optional
+from typing import Optional, Tuple
 from pyrogram import Client
 from pyrogram.types import Message
 from config import (
@@ -71,7 +71,7 @@ async def download_with_aria2c(
     proxy_manager: Optional[ProxyManager],
     progress_callback=None,
     max_retries: int = 3
-) -> tuple[bool, str]:
+) -> Tuple[bool, str]:
     """
     aria2c ile dosya indirir, proxy rotasyonu ile
     
@@ -299,4 +299,3 @@ async def pixeldrain_download(bot: Client, message: Message, url: str):
             await status_msg.edit_text(f"❌ Bir hata oluştu!\n\n**Hata:** {str(e)}")
         except Exception as edit_error:
             LOGGER.error(f"Status mesajı düzenlenemedi: {edit_error}")
-            pass

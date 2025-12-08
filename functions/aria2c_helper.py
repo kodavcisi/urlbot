@@ -24,6 +24,9 @@ def build_aria2c_command(url: str, output_path: str, connections: int = 16, prox
     """
     import os
     
+    output_dir = os.path.dirname(output_path) or '.'
+    output_file = os.path.basename(output_path)
+    
     command = [
         "aria2c",
         "-x", str(connections),
@@ -32,8 +35,8 @@ def build_aria2c_command(url: str, output_path: str, connections: int = 16, prox
         "--file-allocation=none",
         "--console-log-level=error",
         "--summary-interval=0",
-        "-d", os.path.dirname(output_path),  # dizin
-        "-o", os.path.basename(output_path),  # dosya adı
+        "-d", output_dir,  # dizin
+        "-o", output_file,  # dosya adı
         url
     ]
     
