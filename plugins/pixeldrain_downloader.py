@@ -3,6 +3,7 @@ import re
 import time
 import asyncio
 import logging
+import aiohttp
 from typing import Optional, Tuple
 from pyrogram import Client
 from pyrogram.types import Message
@@ -16,7 +17,8 @@ from config import (
 )
 from functions.aria2c_helper import build_aria2c_command, run_aria2c
 from functions.proxy_manager import ProxyManager
-from functions.progress import humanbytes
+from functions.progress import humanbytes, progress_for_pyrogram
+from functions.ffmpeg import DocumentThumb, VideoMetaData
 
 LOGGER = logging.getLogger(__name__)
 
@@ -68,6 +70,32 @@ def get_direct_download_url(file_id: str) -> str:
         Direkt indirme URL'si
     """
     return f"https://pixeldrain.com/api/file/{file_id}"
+
+
+async def get_file_info(file_id: str) -> Optional[dict]:
+    """
+    Pixeldrain API'sinden dosya bilgilerini çeker
+    
+    Args:
+        file_id: Pixeldrain dosya ID'si
+        
+    Returns:
+        Dosya bilgileri (name, size, etc.) veya None
+    """
+    try:
+        url = f"https://pixeldrain.com/api/file/{file_id}/info"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    LOGGER.info(f"Pixeldrain dosya bilgisi: {data.get('name', 'N/A')}, {data.get('size', 'N/A')} bytes")
+                    return data
+                else:
+                    LOGGER.warning(f"Dosya bilgisi alınamadı, HTTP {response.status}")
+                    return None
+    except Exception as e:
+        LOGGER.error(f"Dosya bilgisi alma hatası: {e}")
+        return None
 
 
 async def download_with_aria2c(
@@ -154,12 +182,19 @@ async def pixeldrain_download(bot: Client, message: Message, url: str):
     Args:
         bot: Pyrogram Client
         message: Kullanıcı mesajı
-        url: Pixeldrain URL'si
+        url: Pixeldrain URL'si (veya URL|custom_filename formatı)
     """
     # İlk mesaj
     status_msg = await message.reply_text("📥 Pixeldrain linki tespit edildi, hazırlanıyor...")
     
     try:
+        # URL ve özel dosya adını ayır
+        custom_filename = None
+        if "|" in url:
+            parts = url.split("|", 1)
+            url = parts[0].strip()
+            custom_filename = parts[1].strip() if len(parts) > 1 else None
+        
         # Dosya ID'sini çıkar
         file_id = extract_pixeldrain_id(url)
         if not file_id:
@@ -167,6 +202,30 @@ async def pixeldrain_download(bot: Client, message: Message, url: str):
             return
         
         LOGGER.info(f"Pixeldrain dosya ID: {file_id}")
+        
+        # Dosya bilgilerini al
+        file_info = await get_file_info(file_id)
+        original_filename = None
+        if file_info:
+            original_filename = file_info.get('name', None)
+        
+        # Dosya adını belirle
+        if custom_filename:
+            # Kullanıcı özel ad vermiş
+            final_filename = custom_filename
+        elif original_filename:
+            # Sitedeki orijinal ad
+            final_filename = original_filename
+        else:
+            # Fallback
+            final_filename = f"pixeldrain_{file_id}"
+        
+        # .mp4 uzantısını ekle/normalize et
+        # Mevcut uzantıyı kaldır ve her zaman .mp4 ekle
+        base_name = os.path.splitext(final_filename)[0]
+        final_filename = base_name + '.mp4'
+        
+        LOGGER.info(f"Son dosya adı: {final_filename}")
         
         # Direkt indirme URL'si
         download_url = get_direct_download_url(file_id)
@@ -184,8 +243,8 @@ async def pixeldrain_download(bot: Client, message: Message, url: str):
         
         # İndirme yolu
         random_suffix = str(int(time.time()))
-        file_name = f"pixeldrain_{file_id}_{random_suffix}.bin"
-        output_path = os.path.join(DOWNLOAD_LOCATION, str(message.from_user.id), file_name)
+        temp_filename = f"pixeldrain_{file_id}_{random_suffix}.mp4"
+        output_path = os.path.join(DOWNLOAD_LOCATION, str(message.from_user.id), temp_filename)
         
         # Dizin oluştur
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -267,21 +326,54 @@ async def pixeldrain_download(bot: Client, message: Message, url: str):
                 pass
             return
         
+        # Video metadata al
+        try:
+            metadata = VideoMetaData(output_path)
+            duration = metadata.get_duration()
+            width = metadata.get_width()
+            height = metadata.get_height()
+        except Exception as e:
+            LOGGER.warning(f"Video metadata alınamadı: {e}")
+            duration = 0
+            width = 0
+            height = 0
+        
+        # Thumbnail al
+        try:
+            thumbnail = await DocumentThumb(bot, message)
+        except Exception as e:
+            LOGGER.warning(f"Thumbnail alınamadı: {e}")
+            thumbnail = None
+        
         # Yükleme başlat
+        start_time = time.time()
         await status_msg.edit_text(
             f"✅ İndirme tamamlandı!\n\n"
+            f"**Dosya:** {final_filename}\n"
             f"**Boyut:** {humanbytes(file_size)}\n\n"
-            f"📤 Telegram'a yükleniyor..."
+            f"📤 Telegram'a video olarak yükleniyor... 0%"
         )
         
-        # Dosyayı Telegram'a yükle
+        # Video olarak yükle
         try:
-            await message.reply_document(
-                document=output_path,
-                caption=f"📁 **Pixeldrain Dosyası**\n\n"
-                        f"🔗 ID: `{file_id}`\n"
+            await bot.send_video(
+                chat_id=message.chat.id,
+                video=output_path,
+                caption=f"📹 **{final_filename}**\n\n"
+                        f"🔗 Pixeldrain ID: `{file_id}`\n"
                         f"📊 Boyut: {humanbytes(file_size)}",
-                reply_to_message_id=message.id
+                duration=duration,
+                width=width,
+                height=height,
+                thumb=thumbnail,
+                file_name=final_filename,
+                reply_to_message_id=message.id,
+                progress=progress_for_pyrogram,
+                progress_args=(
+                    "📤 **Yükleniyor...**",
+                    status_msg,
+                    start_time
+                )
             )
             await status_msg.delete()
             
@@ -297,6 +389,13 @@ async def pixeldrain_download(bot: Client, message: Message, url: str):
                     LOGGER.info(f"Dosya silindi: {output_path}")
             except Exception as e:
                 LOGGER.error(f"Dosya silme hatası: {e}")
+            
+            # Thumbnail temizle
+            if thumbnail and os.path.exists(thumbnail):
+                try:
+                    os.remove(thumbnail)
+                except Exception as e:
+                    LOGGER.error(f"Thumbnail silme hatası: {e}")
                 
     except Exception as e:
         LOGGER.error(f"Pixeldrain indirme hatası: {str(e)}")
