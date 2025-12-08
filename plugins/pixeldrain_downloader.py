@@ -13,7 +13,10 @@ from config import (
     PIXELDRAIN_PROXY_LIST,
     PIXELDRAIN_AUTO_PROXY,
     PIXELDRAIN_ARIA2C_CONNECTIONS,
-    TG_MAX_FILE_SIZE
+    TG_MAX_FILE_SIZE,
+    LOG_CHANNEL,
+    PRE_LOG,
+    userbot
 )
 from functions.aria2c_helper import build_aria2c_command, run_aria2c
 from functions.proxy_manager import ProxyManager
@@ -328,10 +331,8 @@ async def pixeldrain_download(bot: Client, message: Message, url: str):
         
         # Video metadata al
         try:
-            metadata = VideoMetaData(output_path)
-            duration = metadata.get_duration()
-            width = metadata.get_width()
-            height = metadata.get_height()
+            width, height, duration = await VideoMetaData(output_path)
+            LOGGER.info(f"Video metadata: {width}x{height}, duration: {duration}s")
         except Exception as e:
             LOGGER.warning(f"Video metadata alınamadı: {e}")
             duration = 0
@@ -345,38 +346,103 @@ async def pixeldrain_download(bot: Client, message: Message, url: str):
             LOGGER.warning(f"Thumbnail alınamadı: {e}")
             thumbnail = None
         
+        # Caption sadece dosya adı
+        caption = final_filename
+        
         # Yükleme başlat
         start_time = time.time()
-        await status_msg.edit_text(
-            f"✅ İndirme tamamlandı!\n\n"
-            f"**Dosya:** {final_filename}\n"
-            f"**Boyut:** {humanbytes(file_size)}\n\n"
-            f"📤 Telegram'a video olarak yükleniyor... 0%"
-        )
         
-        # Video olarak yükle
+        # 2GB üstü için userbot kullan
+        use_userbot = file_size > 2000 * 1024 * 1024 and PRE_LOG and userbot
+        
         try:
-            await bot.send_video(
-                chat_id=message.chat.id,
-                video=output_path,
-                caption=f"📹 **{final_filename}**\n\n"
-                        f"🔗 Pixeldrain ID: `{file_id}`\n"
-                        f"📊 Boyut: {humanbytes(file_size)}",
-                duration=duration,
-                width=width,
-                height=height,
-                thumb=thumbnail,
-                file_name=final_filename,
-                reply_to_message_id=message.id,
-                progress=progress_for_pyrogram,
-                progress_args=(
-                    "📤 **Yükleniyor...**",
-                    status_msg,
-                    start_time
+            if use_userbot:
+                LOGGER.info(f"Dosya boyutu {humanbytes(file_size)} > 2GB, userbot ile PRE_LOG'a yükleniyor")
+                await status_msg.edit_text(
+                    f"✅ İndirme tamamlandı!\n\n"
+                    f"**Dosya:** {final_filename}\n"
+                    f"**Boyut:** {humanbytes(file_size)}\n\n"
+                    f"📤 Userbot ile yükleniyor... 0%"
                 )
-            )
-            await status_msg.delete()
-            
+                
+                # Userbot ile PRE_LOG'a yükle
+                copy = await userbot.send_video(
+                    chat_id=PRE_LOG,
+                    video=output_path,
+                    caption=caption,
+                    duration=duration,
+                    width=width,
+                    height=height,
+                    thumb=thumbnail,
+                    file_name=final_filename,
+                    progress=progress_for_pyrogram,
+                    progress_args=(
+                        "📤 **Yükleniyor...**",
+                        status_msg,
+                        start_time
+                    )
+                )
+                
+                # Kullanıcıya kopyala
+                await bot.copy_message(
+                    chat_id=message.chat.id,
+                    from_chat_id=PRE_LOG,
+                    message_id=copy.id
+                )
+                
+                # Log kanalına da at
+                if LOG_CHANNEL:
+                    try:
+                        await bot.copy_message(
+                            chat_id=LOG_CHANNEL,
+                            from_chat_id=PRE_LOG,
+                            message_id=copy.id
+                        )
+                    except Exception as log_error:
+                        LOGGER.warning(f"Log kanalına atma hatası: {log_error}")
+                
+                await status_msg.delete()
+                
+            else:
+                # Normal bot ile yükle
+                await status_msg.edit_text(
+                    f"✅ İndirme tamamlandı!\n\n"
+                    f"**Dosya:** {final_filename}\n"
+                    f"**Boyut:** {humanbytes(file_size)}\n\n"
+                    f"📤 Telegram'a video olarak yükleniyor... 0%"
+                )
+                
+                sent_message = await bot.send_video(
+                    chat_id=message.chat.id,
+                    video=output_path,
+                    caption=caption,
+                    duration=duration,
+                    width=width,
+                    height=height,
+                    thumb=thumbnail,
+                    file_name=final_filename,
+                    reply_to_message_id=message.id,
+                    progress=progress_for_pyrogram,
+                    progress_args=(
+                        "📤 **Yükleniyor...**",
+                        status_msg,
+                        start_time
+                    )
+                )
+                
+                # Log kanalına at
+                if LOG_CHANNEL:
+                    try:
+                        await bot.copy_message(
+                            chat_id=LOG_CHANNEL,
+                            from_chat_id=message.chat.id,
+                            message_id=sent_message.id
+                        )
+                    except Exception as log_error:
+                        LOGGER.warning(f"Log kanalına atma hatası: {log_error}")
+                
+                await status_msg.delete()
+        
         except Exception as e:
             LOGGER.error(f"Telegram yükleme hatası: {e}")
             await status_msg.edit_text(f"❌ Telegram'a yükleme başarısız!\n\n**Hata:** {str(e)}")
