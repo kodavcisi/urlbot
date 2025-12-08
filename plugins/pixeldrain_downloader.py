@@ -6,15 +6,13 @@ import logging
 from typing import Optional
 from pyrogram import Client
 from pyrogram.types import Message
-from translation import Translation
 from config import (
     DOWNLOAD_LOCATION, 
     PIXELDRAIN_USE_PROXY,
     PIXELDRAIN_PROXY_LIST,
     PIXELDRAIN_AUTO_PROXY,
     PIXELDRAIN_ARIA2C_CONNECTIONS,
-    TG_MAX_FILE_SIZE,
-    PROCESS_MAX_TIMEOUT
+    TG_MAX_FILE_SIZE
 )
 from functions.aria2c_helper import build_aria2c_command, run_aria2c
 from functions.proxy_manager import ProxyManager
@@ -286,8 +284,8 @@ async def pixeldrain_download(bot: Client, message: Message, url: str):
             LOGGER.error(f"Telegram yükleme hatası: {e}")
             await status_msg.edit_text(f"❌ Telegram'a yükleme başarısız!\n\n**Hata:** {str(e)}")
         
-        # Temizlik
         finally:
+            # Temizlik
             try:
                 if os.path.exists(output_path):
                     os.remove(output_path)
@@ -299,5 +297,6 @@ async def pixeldrain_download(bot: Client, message: Message, url: str):
         LOGGER.error(f"Pixeldrain indirme hatası: {str(e)}")
         try:
             await status_msg.edit_text(f"❌ Bir hata oluştu!\n\n**Hata:** {str(e)}")
-        except:
+        except Exception as edit_error:
+            LOGGER.error(f"Status mesajı düzenlenemedi: {edit_error}")
             pass

@@ -153,7 +153,8 @@ class ProxyManager:
         """Random User-Agent döndürür"""
         try:
             return self.ua.random
-        except:
+        except Exception as e:
+            LOGGER.debug(f"User-Agent oluşturma hatası: {e}")
             # Fallback user agents
             fallback_uas = [
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",

@@ -22,6 +22,8 @@ def build_aria2c_command(url: str, output_path: str, connections: int = 16, prox
     Returns:
         aria2c komut listesi
     """
+    import os
+    
     command = [
         "aria2c",
         "-x", str(connections),
@@ -30,8 +32,8 @@ def build_aria2c_command(url: str, output_path: str, connections: int = 16, prox
         "--file-allocation=none",
         "--console-log-level=error",
         "--summary-interval=0",
-        "-d", output_path.rsplit('/', 1)[0],  # dizin
-        "-o", output_path.rsplit('/', 1)[1],  # dosya adı
+        "-d", os.path.dirname(output_path),  # dizin
+        "-o", os.path.basename(output_path),  # dosya adı
         url
     ]
     
@@ -132,10 +134,9 @@ async def run_aria2c(command: list, progress_callback=None) -> Tuple[bool, str]:
             LOGGER.info("aria2c indirme başarıyla tamamlandı")
             return True, ""
         else:
-            stdout, stderr = await process.communicate()
-            error_msg = stderr.decode('utf-8', errors='ignore') if stderr else "Bilinmeyen hata"
-            LOGGER.error(f"aria2c hata ile sonlandı (kod: {returncode}): {error_msg}")
-            return False, error_msg
+            # Process zaten bitti, sadece return code'u kontrol et
+            LOGGER.error(f"aria2c hata ile sonlandı (kod: {returncode})")
+            return False, f"aria2c hata kodu: {returncode}"
             
     except Exception as e:
         LOGGER.error(f"aria2c çalıştırma hatası: {str(e)}")
