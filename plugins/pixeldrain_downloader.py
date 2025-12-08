@@ -25,12 +25,17 @@ def is_pixeldrain_url(url: str) -> bool:
     """
     URL'nin Pixeldrain linki olup olmadığını kontrol eder
     
+    Note: This is a simple domain check for routing purposes only,
+    not for security sanitization. The actual URL is validated
+    with regex in extract_pixeldrain_id().
+    
     Args:
         url: Kontrol edilecek URL
         
     Returns:
         True = Pixeldrain linki, False = değil
     """
+    # Simple substring check for routing - not for security
     return "pixeldrain.com" in url.lower()
 
 
