@@ -3,7 +3,6 @@ import re
 import time
 import asyncio
 import logging
-import aiohttp
 from typing import Optional, Tuple
 from pyrogram import Client
 from pyrogram.types import Message
@@ -94,6 +93,8 @@ async def get_file_info(file_id: str, api_key: Optional[str] = None) -> Optional
         Dosya bilgileri (name, size, etc.) veya None
     """
     try:
+        import aiohttp
+        
         url = f"https://pixeldrain.com/api/file/{file_id}/info"
         headers = {}
         if api_key:

@@ -1,5 +1,4 @@
 import asyncio
-import aiohttp
 import logging
 from typing import Optional, List, Dict, Tuple
 from dataclasses import dataclass
@@ -116,6 +115,8 @@ class PixeldrainAccountManager:
             Kalan kota (bytes) veya None
         """
         try:
+            import aiohttp
+            
             url = "https://pixeldrain.com/api/user/limits"
             headers = {
                 "Authorization": f"Basic {account.api_key}",
