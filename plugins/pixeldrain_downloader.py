@@ -48,17 +48,29 @@ def extract_pixeldrain_id(url: str) -> Optional[str]:
     """
     Pixeldrain URL'sinden dosya ID'sini çıkarır
     
+    Desteklenen formatlar:
+    - https://pixeldrain.com/u/XXXXXXXX
+    - http://pixeldrain.com/api/file/XXXXXXXX
+    
     Args:
         url: Pixeldrain URL'si
         
     Returns:
         Dosya ID'si veya None
     """
-    # Örnek URL: https://pixeldrain.com/u/XXXXXXXX
-    pattern = r'pixeldrain\.com/u/([a-zA-Z0-9_-]+)'
-    match = re.search(pattern, url)
-    if match:
-        return match.group(1)
+    # İki farklı URL formatını destekle:
+    # 1. https://pixeldrain.com/u/XXXXXXXX
+    # 2. http://pixeldrain.com/api/file/XXXXXXXX
+    patterns = [
+        r'pixeldrain\.com/u/([a-zA-Z0-9_-]+)',           # Normal format
+        r'pixeldrain\.com/api/file/([a-zA-Z0-9_-]+)'     # API format
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    
     return None
 
 
