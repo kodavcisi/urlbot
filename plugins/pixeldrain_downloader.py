@@ -22,6 +22,7 @@ from functions.aria2c_helper import build_aria2c_command, run_aria2c
 from functions.proxy_manager import ProxyManager
 from functions.progress import humanbytes, progress_for_pyrogram
 from functions.ffmpeg import DocumentThumb, VideoMetaData
+from functions.pixeldrain_accounts import account_manager, PixeldrainAccount
 
 LOGGER = logging.getLogger(__name__)
 
@@ -62,33 +63,44 @@ def extract_pixeldrain_id(url: str) -> Optional[str]:
     return None
 
 
-def get_direct_download_url(file_id: str) -> str:
+def get_direct_download_url(file_id: str, api_key: Optional[str] = None) -> str:
     """
     Pixeldrain dosya ID'sinden direkt indirme URL'si oluşturur
     
     Args:
         file_id: Pixeldrain dosya ID'si
+        api_key: Pixeldrain API key (opsiyonel, authentication için)
         
     Returns:
         Direkt indirme URL'si
     """
-    return f"https://pixeldrain.com/api/file/{file_id}"
+    if api_key:
+        # API key ile authenticated download
+        return f"https://pixeldrain.com/api/file/{file_id}?key={api_key}"
+    else:
+        # Anonymous download
+        return f"https://pixeldrain.com/api/file/{file_id}"
 
 
-async def get_file_info(file_id: str) -> Optional[dict]:
+async def get_file_info(file_id: str, api_key: Optional[str] = None) -> Optional[dict]:
     """
     Pixeldrain API'sinden dosya bilgilerini çeker
     
     Args:
         file_id: Pixeldrain dosya ID'si
+        api_key: Pixeldrain API key (opsiyonel)
         
     Returns:
         Dosya bilgileri (name, size, etc.) veya None
     """
     try:
         url = f"https://pixeldrain.com/api/file/{file_id}/info"
+        headers = {}
+        if api_key:
+            headers["Authorization"] = f"Basic {api_key}"
+        
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+            async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
                 if response.status == 200:
                     data = await response.json()
                     LOGGER.info(f"Pixeldrain dosya bilgisi: {data.get('name', 'N/A')}, {data.get('size', 'N/A')} bytes")
@@ -206,11 +218,37 @@ async def pixeldrain_download(bot: Client, message: Message, url: str):
         
         LOGGER.info(f"Pixeldrain dosya ID: {file_id}")
         
-        # Dosya bilgilerini al
+        # Dosya bilgilerini al (önce anonymous olarak dosya boyutunu öğrenmek için)
         file_info = await get_file_info(file_id)
         original_filename = None
+        file_size_bytes = 0
+        
         if file_info:
             original_filename = file_info.get('name', None)
+            file_size_bytes = file_info.get('size', 0)
+        
+        # Dosya boyutunu kontrol et
+        if file_size_bytes == 0:
+            LOGGER.warning("Dosya boyutu alınamadı, devam ediliyor...")
+        else:
+            LOGGER.info(f"Dosya boyutu: {humanbytes(file_size_bytes)}")
+        
+        # En uygun Pixeldrain hesabını seç
+        selected_account = None
+        if file_size_bytes > 0:
+            await status_msg.edit_text(f"📊 Uygun Pixeldrain hesabı seçiliyor...\n"
+                                      f"Dosya boyutu: {humanbytes(file_size_bytes)}")
+            selected_account = account_manager.select_best_account(file_size_bytes)
+            
+            if selected_account:
+                LOGGER.info(f"Seçilen hesap: {selected_account.username}, "
+                           f"Kalan kota: {humanbytes(selected_account.remaining_quota)}")
+                await status_msg.edit_text(f"✅ Hesap seçildi: {selected_account.username}\n"
+                                          f"Kalan kota: {humanbytes(selected_account.remaining_quota)}")
+            else:
+                await status_msg.edit_text("❌ Hiçbir hesapta yeterli kota yok!\n\n"
+                                          f"{account_manager.get_status_summary()}")
+                return
         
         # Dosya adını belirle
         if custom_filename:
@@ -230,9 +268,10 @@ async def pixeldrain_download(bot: Client, message: Message, url: str):
         
         LOGGER.info(f"Son dosya adı: {final_filename}")
         
-        # Direkt indirme URL'si
-        download_url = get_direct_download_url(file_id)
-        LOGGER.info(f"İndirme URL'si: {download_url}")
+        # Direkt indirme URL'si (API key ile authenticated)
+        api_key = selected_account.api_key if selected_account else None
+        download_url = get_direct_download_url(file_id, api_key)
+        LOGGER.info(f"İndirme URL'si oluşturuldu (authenticated: {api_key is not None})")
         
         # Proxy manager başlat
         proxy_manager = None
@@ -291,7 +330,8 @@ async def pixeldrain_download(bot: Client, message: Message, url: str):
                 LOGGER.debug(f"Progress güncelleme hatası: {e}")
         
         # İndirmeyi başlat
-        await status_msg.edit_text("📥 **aria2c ile indirme başlıyor...**\n\n"
+        account_info = f" (Hesap: {selected_account.username})" if selected_account else ""
+        await status_msg.edit_text(f"📥 **aria2c ile indirme başlıyor...**{account_info}\n\n"
                                    f"🔗 Bağlantı: {PIXELDRAIN_ARIA2C_CONNECTIONS}\n"
                                    f"🔒 Proxy: {'Aktif' if PIXELDRAIN_USE_PROXY else 'Kapalı'}")
         
@@ -314,6 +354,10 @@ async def pixeldrain_download(bot: Client, message: Message, url: str):
         
         file_size = os.path.getsize(output_path)
         LOGGER.info(f"Dosya indirildi: {output_path} ({humanbytes(file_size)})")
+        
+        # İndirme başarılı - kotayı işaretle
+        if selected_account:
+            account_manager.mark_quota_used(selected_account, file_size)
         
         # Dosya boyutu kontrolü
         if file_size > TG_MAX_FILE_SIZE:
