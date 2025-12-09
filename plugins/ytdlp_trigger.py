@@ -24,6 +24,7 @@ from functions.forcesub import handle_force_subscribe
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from functions.utils import URL_REGEX
 from database.database import db
+from plugins.pixeldrain_downloader import is_pixeldrain_url, pixeldrain_download
 
 progress_pattern = re.compile(
     r'(frame|fps|size|time|bitrate|speed)\s*\=\s*(\S+)'
@@ -93,6 +94,13 @@ async def echo(bot, update):
         fsub = await handle_force_subscribe(bot, update)
         if fsub == 400:
             return
+
+    # Pixeldrain URL kontrolü ve özel modüle yönlendirme
+    message_text = update.text
+    if message_text and is_pixeldrain_url(message_text):
+        LOGGER.info("Pixeldrain URL tespit edildi, özel modül çağrılıyor")
+        await pixeldrain_download(bot, update, message_text)
+        return
 
     message_id = update.id
     chat_id = update.chat.id
