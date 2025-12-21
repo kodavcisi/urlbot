@@ -24,7 +24,6 @@ from functions.forcesub import handle_force_subscribe
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from functions.utils import URL_REGEX
 from database.database import db
-from plugins.pixeldrain_downloader import is_pixeldrain_url, pixeldrain_download
 
 progress_pattern = re.compile(
     r'(frame|fps|size|time|bitrate|speed)\s*\=\s*(\S+)'
