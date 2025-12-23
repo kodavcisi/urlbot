@@ -28,7 +28,8 @@ from functions.ffmpeg import generate_screen_shots, VideoThumb, VideoMetaData, V
 from functions.utils import remove_urls, remove_emoji
 
 import logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+import traceback
+logging.basicConfig(format='%(asctime)s - %(filename)s:%(lineno)d - %(name)s - %(levelname)s - %(message)s',
                     handlers=[logging.FileHandler('log.txt'), logging.StreamHandler()],
                     level=logging.INFO)
 LOGGER = logging.getLogger(__name__)
@@ -361,36 +362,59 @@ async def yt_dlp_call_back(bot, update):
             command_to_exec.append("mp4")                
 
     LOGGER.info(command_to_exec)
+    LOGGER.debug(f"Starting yt-dlp download process with command: {' '.join(command_to_exec)}")
+    
     start = datetime.now()
     start1 = time.time() 
-    process = await asyncio.create_subprocess_exec(
-        *command_to_exec,
-        # stdout must a pipe to be accessible as process.stdout
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    await asyncio.wait([
-            read_stdera(start1, process, bot, message_id, chat_id),
-            process.wait(),
-        ])
-    # Wait for the subprocess to finish
-    stdout, stderr = await process.communicate()
-    e_response = stderr.decode().strip()
-    t_response = stdout.decode().strip()
-    # LOGGER.info(e_response)
-    # LOGGER.info(t_response)
-    ad_string_to_replace = "please report this issue on  https://github.com/yt-dlp/yt-dlp/issues?q= , filling out the " \
-                           "appropriate issue template. Confirm you are on the latest version using  yt-dlp -U "
-    if e_response and ad_string_to_replace in e_response:
-        error_message = e_response.replace(ad_string_to_replace, "")
-        await message.edit_caption(caption=error_message)
-        return False, None
-    if t_response:
+    
+    try:
+        process = await asyncio.create_subprocess_exec(
+            *command_to_exec,
+            # stdout must a pipe to be accessible as process.stdout
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        
+        LOGGER.debug(f"yt-dlp process started with PID: {process.pid}")
+        
+        await asyncio.wait([
+                read_stdera(start1, process, bot, message_id, chat_id),
+                process.wait(),
+            ])
+        # Wait for the subprocess to finish
+        stdout, stderr = await process.communicate()
+        e_response = stderr.decode().strip()
+        t_response = stdout.decode().strip()
+        
+        LOGGER.debug(f"yt-dlp process completed with return code: {process.returncode}")
+        LOGGER.debug(f"yt-dlp stdout: {t_response}")
+        LOGGER.debug(f"yt-dlp stderr: {e_response}")
+        
+        if process.returncode != 0:
+            LOGGER.error(f"yt-dlp process failed with return code {process.returncode}")
+            LOGGER.error(f"yt-dlp stderr: {e_response}")
+            
+        # LOGGER.info(e_response)
         # LOGGER.info(t_response)
-        try:
-            os.remove(save_ytdl_json_path)
-        except FileNotFoundError as exc:
-            pass
+        ad_string_to_replace = "please report this issue on  https://github.com/yt-dlp/yt-dlp/issues?q= , filling out the " \
+                               "appropriate issue template. Confirm you are on the latest version using  yt-dlp -U "
+        if e_response and ad_string_to_replace in e_response:
+            error_message = e_response.replace(ad_string_to_replace, "")
+            LOGGER.error(f"yt-dlp download failed with error: {error_message}")
+            await message.edit_caption(caption=error_message)
+            return False, None
+        if t_response:
+            LOGGER.debug("yt-dlp download completed successfully")
+            # LOGGER.info(t_response)
+            try:
+                os.remove(save_ytdl_json_path)
+            except FileNotFoundError as exc:
+                pass
+                
+    except Exception as e:
+        LOGGER.error(f"Error in yt-dlp subprocess execution: {str(e)}")
+        LOGGER.error(f"Stack trace: {traceback.format_exc()}")
+        raise
 
         end_one = datetime.now()
         time_taken_for_download = (end_one - start).seconds
