@@ -24,6 +24,7 @@ from functions.forcesub import handle_force_subscribe
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from functions.utils import URL_REGEX
 from database.database import db
+from plugins.pixeldrain_downloader import is_pixeldrain_url, pixeldrain_download
 
 progress_pattern = re.compile(
     r'(frame|fps|size|time|bitrate|speed)\s*\=\s*(\S+)'
@@ -95,11 +96,11 @@ async def echo(bot, update):
             return
 
     # Pixeldrain URL kontrolü ve özel modüle yönlendirme
-  #  message_text = update.text
-  #  if message_text and is_pixeldrain_url(message_text):
-  #      LOGGER.info("Pixeldrain URL tespit edildi, özel modül çağrılıyor")
-  #      await pixeldrain_download(bot, update, message_text)
-  #      return
+    message_text = update.text
+    if message_text and is_pixeldrain_url(message_text):
+        LOGGER.info("Pixeldrain URL tespit edildi, özel modül çağrılıyor")
+        await pixeldrain_download(bot, update, message_text)
+        return
 
     message_id = update.id
     chat_id = update.chat.id
@@ -165,11 +166,14 @@ async def echo(bot, update):
         command_to_exec = [
             "yt-dlp",
             "--no-warnings",
-            "--external-downloader","aria2c", 
+           # "--external-downloader","aria2c", 
             "--no-check-certificate",
             "-j",
             url
         ]
+    if ".sibnet" in url:
+        command_to_exec.append("--referer")
+        command_to_exec.append("https://video.sibnet.ru/")
     if ".online" in url:
         command_to_exec.append("--referer")
         command_to_exec.append("https://vidmoly.to/")
@@ -222,7 +226,18 @@ async def echo(bot, update):
         command_to_exec.append("--referer")
         command_to_exec.append("https://hdfilmcehennemi.mobi/")
         command_to_exec.append("--referer")
-        command_to_exec.append("https://closeload.filmmakinesi.tv/")
+        command_to_exec.append("https://closeload.filmmakinesi.to/")
+        i = 0
+        while i < len(command_to_exec) - 1:
+        # Eğer parametre '--referer' ise VE bir sonraki eleman 'vidmoly.to' içeriyorsa:
+            if command_to_exec[i] == '--referer' and "vidmoly.to" in command_to_exec[i+1]:
+                command_to_exec.pop(i)   # --referer parametresini sil
+                command_to_exec.pop(i)   # URL'yi sil (Listeler kaydığı için index yine aynıdır)
+            # Eğer listede birden fazla vidmoly varsa hepsini silmek için aşağıdaki 'break'i kaldırın.
+            # Sadece bir tane varsa break kalabilir.
+            # break 
+            else:
+                i += 1
     if "rectv2024live" in url:
         command_to_exec.append("--referer")
         command_to_exec.append("https://twitter.com/")
@@ -240,6 +255,12 @@ async def echo(bot, update):
             if f"{ref}" in url:
                 command_to_exec.append("--referer")
                 command_to_exec.append("https://vidmoly.to/")
+    if "master" in url:
+        command_to_exec.append("--referer")
+        command_to_exec.append("https://hdfilmcehennemi.mobi/")
+        command_to_exec.append("--referer")
+        command_to_exec.append("https://closeload.filmmakinesi.to/")
+
     # setplay kontrolü döngü DIŞINA çıkarıldı
     if "setplay.shop" in url:
         # önceki ayarları sıfırla
@@ -258,6 +279,18 @@ async def echo(bot, update):
             url,
             "--proxy", HTTP_PROXY
             ]
+    if "four.pichive.online" in url: #dizilla için özel ayar
+        command_to_exec = [] #Önceki Ayarları Sıfırla
+        command_to_exec = [
+            "yt-dlp",
+            "--no-warnings",
+            "--no-check-certificate",
+            "--merge-output-format", "mp4",
+            "--impersonate", "chrome",
+            "--referer", "https://four.pichive.online/iframe.php?v=cb72985fabb353bd90d812e23e0018fb",
+            "-j",
+            url,
+             ]
    # else:
     #    command_to_exec = [
      #       "yt-dlp",
