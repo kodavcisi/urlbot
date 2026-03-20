@@ -451,6 +451,14 @@ async def yt_dlp_call_back(bot, update):
             #except:
               #  pass
 
+        if not directory_contents:
+            await bot.edit_message_text(
+                text=Translation.NO_FILE_CREATED,
+                chat_id=chat_id,
+                message_id=message_id
+            )
+            return False, None
+
         for single_file in directory_contents:
             print(single_file)
             path = os.path.join(tmp_directory_for_each_user, single_file)
