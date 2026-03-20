@@ -229,13 +229,14 @@ async def yt_dlp_call_back(bot, update):
             command_to_exec = [
                 "yt-dlp",
                 "-c",
-                "--max-filesize", str(TG_MAX_FILE_SIZE),
-                "--embed-subs",
-                "-N", "16", 
+               # "--max-filesize", str(TG_MAX_FILE_SIZE),
+               # "--embed-subs",
+               # "-N", "16",
                 "-f", yt_dlp_format,
                 "--hls-prefer-ffmpeg",
                 "--merge-output-format", "mp4",
                 "--no-check-certificate",
+               # "--add-header", "Accept: */*",
                 yt_dlp_url,
                 "-o", download_directory
             ]
@@ -252,7 +253,7 @@ async def yt_dlp_call_back(bot, update):
         command_to_exec.append("--external-downloader")
         command_to_exec.append("aria2c")
         command_to_exec.append("--external-downloader-args")
-        command_to_exec.append("-x 16 -s 16")
+        command_to_exec.append("-x 16 -s 16" )
         command_to_exec.append("--merge-output-format")
         command_to_exec.append("mp4")
 
@@ -264,6 +265,9 @@ async def yt_dlp_call_back(bot, update):
     if HTTP_PROXY != "":
         command_to_exec.append("--proxy")
         command_to_exec.append(HTTP_PROXY)
+    if ".sibnet" in yt_dlp_url:
+        command_to_exec.append("--referer")
+        command_to_exec.append("https://video.sibnet.ru/")
     if ".cloud" in yt_dlp_url:
         command_to_exec.append("--referer")
         command_to_exec.append("https://vidmoly.to/")
@@ -328,6 +332,13 @@ async def yt_dlp_call_back(bot, update):
             if f"{ref}" in yt_dlp_url:
                 command_to_exec.append("--referer")
                 command_to_exec.append("https://vidmoly.to/")
+    if "master" in yt_dlp_url:
+        command_to_exec.append("--referer")
+        command_to_exec.append("https://hdfilmcehennemi.mobi/")
+        command_to_exec.append("--referer")
+        command_to_exec.append("https://closeload.filmmakinesi.to/")
+
+
     if "setplay" in yt_dlp_url: 
         command_to_exec = [] #Önceki Ayarları Sıfırla
         command_to_exec = [
@@ -344,6 +355,24 @@ async def yt_dlp_call_back(bot, update):
             yt_dlp_url,
             "-o", download_directory
         ] #Setplay için özel ayar
+    if "four.pichive.online" in yt_dlp_url: #dizilla için özel ayar
+        command_to_exec = [] #Önceki Ayarları Sıfırla
+        command_to_exec = [
+            "yt-dlp",
+            "-c",
+            "--max-filesize", str(TG_MAX_FILE_SIZE),
+            #"--embed-subs",
+            #"-N", "16",
+            "-f", yt_dlp_format,
+            "--hls-prefer-ffmpeg",
+            "--merge-output-format", "mp4",
+            "--impersonate", "chrome",
+            "--referer", "https://four.pichive.online/iframe.php?v=cb72985fabb353bd90d812e23e0018fb",
+            yt_dlp_url,
+            "-o", download_directory
+        ]
+
+
     
 #                except KeyError:
  #                   command_to_exec = [
