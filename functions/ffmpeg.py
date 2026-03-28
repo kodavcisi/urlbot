@@ -10,10 +10,11 @@ from hachoir.parser import createParser
 from hachoir.metadata import extractMetadata
 
 import logging
+import traceback
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logging.basicConfig(format='%(asctime)s - %(filename)s:%(lineno)d - %(name)s - %(levelname)s - %(message)s',
                     handlers=[logging.FileHandler('log.txt'), logging.StreamHandler()],
-                    level=logging.INFO)
+                    level=logging.DEBUG)
 LOGGER = logging.getLogger(__name__)
 
 
@@ -90,118 +91,196 @@ async def AudioMetaData(download_directory):
 
 
 async def place_water_mark(input_file, output_file, water_mark_file):
-    watermarked_file = output_file + ".watermark.png"
-    metadata = extractMetadata(createParser(input_file))
-    width = metadata.get("width")
-    # https://stackoverflow.com/a/34547184/4723940
-    shrink_watermark_file_genertor_command = [
-        "ffmpeg",
-        "-i", water_mark_file,
-        "-y -v quiet",
-        "-vf",
-        "scale={}*0.5:-1".format(width),
-        watermarked_file
-    ]
-    # print(shrink_watermark_file_genertor_command)
-    process = await asyncio.create_subprocess_exec(
-        *shrink_watermark_file_genertor_command,
-        # stdout must a pipe to be accessible as process.stdout
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    # Wait for the subprocess to finish
-    stdout, stderr = await process.communicate()
-    e_response = stderr.decode().strip()
-    t_response = stdout.decode().strip()
-    commands_to_execute = [
-        "ffmpeg",
-        "-i", input_file,
-        "-i", watermarked_file,
-        "-filter_complex",
-        # https://stackoverflow.com/a/16235519
-        # "\"[0:0] scale=400:225 [wm]; [wm][1:0] overlay=305:0 [out]\"",
-        # "-map \"[out]\" -b:v 896k -r 20 -an ",
-        "\"overlay=(main_w-overlay_w):(main_h-overlay_h)\"",
-        # "-vf \"drawtext=text='@FFMovingPictureExpertGroupBOT':x=W-(W/2):y=H-(H/2):fontfile=" + Config.FONT_FILE + ":fontsize=12:fontcolor=white:shadowcolor=black:shadowx=5:shadowy=5\"",
-        output_file
-    ]
-    # print(commands_to_execute)
-    process = await asyncio.create_subprocess_exec(
-        *commands_to_execute,
-        # stdout must a pipe to be accessible as process.stdout
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    # Wait for the subprocess to finish
-    stdout, stderr = await process.communicate()
-    e_response = stderr.decode().strip()
-    t_response = stdout.decode().strip()
-    return output_file
+    LOGGER.debug(f"Starting watermark placement: input_file={input_file}, output_file={output_file}, water_mark_file={water_mark_file}")
+    
+    try:
+        watermarked_file = output_file + ".watermark.png"
+        metadata = extractMetadata(createParser(input_file))
+        width = metadata.get("width")
+        
+        # https://stackoverflow.com/a/34547184/4723940
+        shrink_watermark_file_genertor_command = [
+            "ffmpeg",
+            "-i", water_mark_file,
+            "-y -v quiet",
+            "-vf",
+            "scale={}*0.5:-1".format(width),
+            watermarked_file
+        ]
+        
+        LOGGER.debug(f"Starting ffmpeg watermark shrink command: {' '.join(shrink_watermark_file_genertor_command)}")
+        
+        process = await asyncio.create_subprocess_exec(
+            *shrink_watermark_file_genertor_command,
+            # stdout must a pipe to be accessible as process.stdout
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        # Wait for the subprocess to finish
+        stdout, stderr = await process.communicate()
+        e_response = stderr.decode().strip()
+        t_response = stdout.decode().strip()
+        
+        LOGGER.debug(f"ffmpeg watermark shrink stdout: {t_response}")
+        LOGGER.debug(f"ffmpeg watermark shrink stderr: {e_response}")
+        
+        if process.returncode != 0:
+            LOGGER.error(f"ffmpeg watermark shrink failed with return code {process.returncode}")
+            LOGGER.error(f"ffmpeg watermark shrink stderr: {e_response}")
+            raise Exception(f"ffmpeg watermark shrink failed: {e_response}")
+        
+        LOGGER.debug("ffmpeg watermark shrink completed successfully")
+        
+        commands_to_execute = [
+            "ffmpeg",
+            "-i", input_file,
+            "-i", watermarked_file,
+            "-filter_complex",
+            # https://stackoverflow.com/a/16235519
+            # "\"[0:0] scale=400:225 [wm]; [wm][1:0] overlay=305:0 [out]\"",
+            # "-map \"[out]\" -b:v 896k -r 20 -an ",
+            "\"overlay=(main_w-overlay_w):(main_h-overlay_h)\"",
+            # "-vf \"drawtext=text='@FFMovingPictureExpertGroupBOT':x=W-(W/2):y=H-(H/2):fontfile=" + Config.FONT_FILE + ":fontsize=12:fontcolor=white:shadowcolor=black:shadowx=5:shadowy=5\"",
+            output_file
+        ]
+        
+        LOGGER.debug(f"Starting ffmpeg watermark overlay command: {' '.join(commands_to_execute)}")
+        
+        process = await asyncio.create_subprocess_exec(
+            *commands_to_execute,
+            # stdout must a pipe to be accessible as process.stdout
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        # Wait for the subprocess to finish
+        stdout, stderr = await process.communicate()
+        e_response = stderr.decode().strip()
+        t_response = stdout.decode().strip()
+        
+        LOGGER.debug(f"ffmpeg watermark overlay stdout: {t_response}")
+        LOGGER.debug(f"ffmpeg watermark overlay stderr: {e_response}")
+        
+        if process.returncode != 0:
+            LOGGER.error(f"ffmpeg watermark overlay failed with return code {process.returncode}")
+            LOGGER.error(f"ffmpeg watermark overlay stderr: {e_response}")
+            raise Exception(f"ffmpeg watermark overlay failed: {e_response}")
+        
+        LOGGER.debug(f"Watermark placement completed successfully: {output_file}")
+        return output_file
+        
+    except Exception as e:
+        LOGGER.error(f"Error in place_water_mark: {str(e)}")
+        LOGGER.error(f"Stack trace: {traceback.format_exc()}")
+        raise
 
 
 async def take_screen_shot(video_file, output_directory, ttl):
-    # https://stackoverflow.com/a/13891070/4723940
-    out_put_file_name = output_directory + \
-                        "/" + str(time.time()) + ".jpg"
-    file_genertor_command = [
-        "ffmpeg",
-        "-ss",
-        str(ttl),
-        "-i",
-        video_file,
-        "-vframes",
-        "1",
-        out_put_file_name
-    ]
-    # width = "90"
-    process = await asyncio.create_subprocess_exec(
-        *file_genertor_command,
-        # stdout must a pipe to be accessible as process.stdout
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    # Wait for the subprocess to finish
-    stdout, stderr = await process.communicate()
-    e_response = stderr.decode().strip()
-    t_response = stdout.decode().strip()
-    if os.path.lexists(out_put_file_name):
-        return out_put_file_name
-    else:
-        return None
+    LOGGER.debug(f"Starting screenshot generation: video_file={video_file}, output_directory={output_directory}, ttl={ttl}")
+    
+    try:
+        # https://stackoverflow.com/a/13891070/4723940
+        out_put_file_name = output_directory + \
+                            "/" + str(time.time()) + ".jpg"
+        file_genertor_command = [
+            "ffmpeg",
+            "-ss",
+            str(ttl),
+            "-i",
+            video_file,
+            "-vframes",
+            "1",
+            out_put_file_name
+        ]
+        
+        LOGGER.debug(f"Starting ffmpeg screenshot command: {' '.join(file_genertor_command)}")
+        
+        # width = "90"
+        process = await asyncio.create_subprocess_exec(
+            *file_genertor_command,
+            # stdout must a pipe to be accessible as process.stdout
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        # Wait for the subprocess to finish
+        stdout, stderr = await process.communicate()
+        e_response = stderr.decode().strip()
+        t_response = stdout.decode().strip()
+        
+        LOGGER.debug(f"ffmpeg screenshot stdout: {t_response}")
+        LOGGER.debug(f"ffmpeg screenshot stderr: {e_response}")
+        
+        if process.returncode != 0:
+            LOGGER.error(f"ffmpeg screenshot failed with return code {process.returncode}")
+            LOGGER.error(f"ffmpeg screenshot stderr: {e_response}")
+            raise Exception(f"ffmpeg screenshot failed: {e_response}")
+        
+        if os.path.lexists(out_put_file_name):
+            LOGGER.debug(f"Screenshot generated successfully: {out_put_file_name}")
+            return out_put_file_name
+        else:
+            LOGGER.error(f"Screenshot file was not created: {out_put_file_name}")
+            return None
+            
+    except Exception as e:
+        LOGGER.error(f"Error in take_screen_shot: {str(e)}")
+        LOGGER.error(f"Stack trace: {traceback.format_exc()}")
+        raise
 
 
 async def cult_small_video(video_file, output_directory, start_time, end_time):
-    # https://stackoverflow.com/a/13891070/4723940
-    out_put_file_name = output_directory + \
-                        "/" + str(round(time.time())) + ".mp4"
-    file_genertor_command = [
-        "ffmpeg",
-        "-i",
-        video_file,
-        "-ss",
-        start_time,
-        "-to",
-        end_time,
-        "-async",
-        "1",
-        "-strict",
-        "-2",
-        out_put_file_name
-    ]
-    process = await asyncio.create_subprocess_exec(
-        *file_genertor_command,
-        # stdout must a pipe to be accessible as process.stdout
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    # Wait for the subprocess to finish
-    stdout, stderr = await process.communicate()
-    e_response = stderr.decode().strip()
-    t_response = stdout.decode().strip()
-    if os.path.lexists(out_put_file_name):
-        return out_put_file_name
-    else:
-        return None
+    LOGGER.debug(f"Starting video trimming: video_file={video_file}, output_directory={output_directory}, start_time={start_time}, end_time={end_time}")
+    
+    try:
+        # https://stackoverflow.com/a/13891070/4723940
+        out_put_file_name = output_directory + \
+                            "/" + str(round(time.time())) + ".mp4"
+        file_genertor_command = [
+            "ffmpeg",
+            "-i",
+            video_file,
+            "-ss",
+            start_time,
+            "-to",
+            end_time,
+            "-async",
+            "1",
+            "-strict",
+            "-2",
+            out_put_file_name
+        ]
+        
+        LOGGER.debug(f"Starting ffmpeg video trim command: {' '.join(file_genertor_command)}")
+        
+        process = await asyncio.create_subprocess_exec(
+            *file_genertor_command,
+            # stdout must a pipe to be accessible as process.stdout
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        # Wait for the subprocess to finish
+        stdout, stderr = await process.communicate()
+        e_response = stderr.decode().strip()
+        t_response = stdout.decode().strip()
+        
+        LOGGER.debug(f"ffmpeg video trim stdout: {t_response}")
+        LOGGER.debug(f"ffmpeg video trim stderr: {e_response}")
+        
+        if process.returncode != 0:
+            LOGGER.error(f"ffmpeg video trim failed with return code {process.returncode}")
+            LOGGER.error(f"ffmpeg video trim stderr: {e_response}")
+            raise Exception(f"ffmpeg video trim failed: {e_response}")
+        
+        if os.path.lexists(out_put_file_name):
+            LOGGER.debug(f"Video trimming completed successfully: {out_put_file_name}")
+            return out_put_file_name
+        else:
+            LOGGER.error(f"Trimmed video file was not created: {out_put_file_name}")
+            return None
+            
+    except Exception as e:
+        LOGGER.error(f"Error in cult_small_video: {str(e)}")
+        LOGGER.error(f"Stack trace: {traceback.format_exc()}")
+        raise
 
 
 async def generate_screen_shots(
