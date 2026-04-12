@@ -38,6 +38,7 @@ Bot cevap vermediyse @BayTyler ile iletişime geçin"""
     THUMBNAIL_TEXT = "Thumbnail ayarlamak için bana herhangi bir fotoğraf gönderin."
     IFLONG_FILE_NAME = """Telegram tarafından izin verilen dosya adı sınırı {alimit} karakterdir.\n\nBana verilen dosya adında {num} karakter var.\nLütfen dosya adınızı kısaltın ve tekrar deneyin!"""
     SLOW_URL_DECED = "Bu url çok yavaş dostum"
+    NO_FILE_CREATED = "Hata: İndirme işlemi tamamlandı ancak dosya oluşturulamadı. Lütfen linki kontrol edin."
 
     DOWNLOAD_PROGRESS = "`█`"
     UPLOAD_PROGRESS = "`░`"
