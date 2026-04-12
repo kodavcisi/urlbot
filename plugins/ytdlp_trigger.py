@@ -6,7 +6,7 @@ logging.basicConfig(
         logging.FileHandler('log.txt', encoding='utf-8'),
         logging.StreamHandler()
     ],
-    level=logging.DEBUG  # INFO yerine DEBUG
+    level=logging.INFO  # INFO yerine DEBUG
 )
 
 LOGGER = logging.getLogger(__name__)
