@@ -219,7 +219,7 @@ async def echo(bot, update):
     if ("hdmomplayer" in url or
     "cehennemstream" in url or
     "betaplayer" in url or
-    "cizgipass5"):
+    "cizgipass5"in url):
         command_to_exec.append("--add-header")
         command_to_exec.append("Accept: */*")
     if "master" in url:
@@ -227,17 +227,6 @@ async def echo(bot, update):
         command_to_exec.append("https://hdfilmcehennemi.mobi/")
         command_to_exec.append("--referer")
         command_to_exec.append("https://closeload.filmmakinesi.to/")
-        i = 0
-        while i < len(command_to_exec) - 1:
-        # Eğer parametre '--referer' ise VE bir sonraki eleman 'vidmoly.to' içeriyorsa:
-            if command_to_exec[i] == '--referer' and "vidmoly.to" in command_to_exec[i+1]:
-                command_to_exec.pop(i)   # --referer parametresini sil
-                command_to_exec.pop(i)   # URL'yi sil (Listeler kaydığı için index yine aynıdır)
-            # Eğer listede birden fazla vidmoly varsa hepsini silmek için aşağıdaki 'break'i kaldırın.
-            # Sadece bir tane varsa break kalabilir.
-            # break 
-            else:
-                i += 1
     if "rectv2024live" in url:
         command_to_exec.append("--referer")
         command_to_exec.append("https://twitter.com/")
@@ -262,7 +251,7 @@ async def echo(bot, update):
         command_to_exec.append("https://closeload.filmmakinesi.to/")
 
     # setplay kontrolü döngü DIŞINA çıkarıldı
-    if "setplay.shop" in url:
+    if "petplay.shop" in url:
         # önceki ayarları sıfırla
         command_to_exec = []
         
